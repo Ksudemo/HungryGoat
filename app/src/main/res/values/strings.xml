@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Hungry goat</string>
+    <string name="settings">Settings/n</string>
+    <string name="levelSelect">Выбор уровня</string>
+    <string name="theory">Теория</string>
+    <string name="gameRules">Тут будут правила (:</string>
+    <string name="settingsExample">Тут будут настройки (:</string>
+    <string name="playLast">Играть</string>
+    <string name="backButton">Кнопка назад</string>
+    <string name="playLevelButton">Запустить уровень</string>
+    <string name="pick_cell_size">Выбор размера клетки</string>
+    <string name="enableDrawCellIndex">Включить отрисовку сетки и индексов</string>
+    <string name="enableDrawRopeNodes">Включить отрисовку узлов веревки</string>
+    <string name="enableRenderWolfBounds">Включить отрисовку границ волка</string>
+    <string name="enableRenderGoatBounds">Включить отрисовку границ козы</string>
+    <string name="pick_render_type">Выбор тип объекта для отрисовки</string>
+    <string name="sharedPrefsSettingsName">HungryGoatSettings</string>
+
+</resources>
