@@ -11,6 +11,8 @@ import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Wolf
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 class RenderService {
 
@@ -42,8 +44,6 @@ class RenderService {
         if (setttings.drawWolfBounds)
             drawWolfBounds(canvas, objects)
 
-        if (setttings.drawGoatBounds)
-            drawGoatBounds(canvas, objects)
 
         try {
             goatVisited?.forEach {
@@ -52,12 +52,17 @@ class RenderService {
                     style = Paint.Style.FILL_AND_STROKE
                 }, it)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e("MyTag", e.toString())
         }
+
         if (setttings.drawRopeNodes)
             drawRopeNodes(ropes, canvas, paint)
 
         drawObjectAndRopes(objects, ropes, canvas)
+
+        if (setttings.drawGoatBounds)
+            drawGoatBounds(canvas, objects)
     }
 
 
@@ -77,11 +82,36 @@ class RenderService {
     private fun drawGoatBounds(canvas: Canvas, objects: MutableList<GameObject>) {
         val goat = objects.find { it.gameObjectTag == GameObjectTags.GOAT } as Goat?
 
-        goat?.bounds?.forEach {
-            drawCell(canvas, rectPaint.apply {
-                color = Color.LTGRAY
-                style = Paint.Style.FILL_AND_STROKE
-            }, it)
+        val linePaint = rectPaint.apply {
+            color = Color.RED
+            style = Paint.Style.STROKE
+            strokeWidth = 4f
+        }
+
+        try {
+            if (goat?.bounds != null) {
+//                for (i in 0 until goat.bounds.size - 1) {
+//                    val cur = goat.bounds[i]
+//                    val next = goat.bounds[i + 1]
+//
+//                    canvas.drawLine(cur.x, cur.y, next.x, next.y, linePaint)
+//                }
+//                canvas.drawLine(
+//                    goat.bounds.last().x,
+//                    goat.bounds.last().y,
+//                    goat.bounds.first().x,
+//                    goat.bounds.first().y, linePaint
+//                )
+                val cx = goat.bounds.map { it.x }.average().toFloat()
+                val cy = goat.bounds.map { it.y }.average().toFloat()
+
+                val first = goat.bounds.first()
+                val r = sqrt((first.x - cx).pow(2) + (first.y - cy).pow(2))
+
+                canvas.drawCircle(cx, cy, r, linePaint)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -92,7 +122,7 @@ class RenderService {
         try {
             ropes.forEach { it.draw(canvas, paint) }
 
-            objects.forEach { it.draw(canvas, paint) }
+            objects.forEach { it.drawBase(canvas, paint) }
             objects.find { it.isSelected }?.drawBase(canvas, paint)
         } catch (e: Exception) {
             Log.e("MyTag", e.toString())
@@ -101,10 +131,15 @@ class RenderService {
 
 
     private fun drawRopeNodes(ropes: MutableList<Rope>, canvas: Canvas, paint: Paint) =
-        ropes.forEach { rope ->
-            rope.ropePath.forEach {
-                it.draw(canvas, paint)
+        try {
+
+            ropes.forEach { rope ->
+                rope.ropePath.forEach {
+                    it.draw(canvas, paint)
+                }
             }
+        } catch (e: Exception) {
+            Log.e("MyTag", e.toString())
         }
 
 

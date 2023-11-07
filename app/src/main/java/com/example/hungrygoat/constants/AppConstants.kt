@@ -1,5 +1,6 @@
 package com.example.hungrygoat.constants
 
+import android.util.Log
 import com.example.hungrygoat.gameLogic.game.GameEngine
 
 object SingletonAppConstantsInfo {
@@ -9,7 +10,7 @@ object SingletonAppConstantsInfo {
         if (!::appConstants.isInitialized) {
             appConstants = AppConstants()
             appConstants.changeOption(PickedOptions.CLEAR)
-            appConstants.changeState(GameStates.STATE_PAUSED)
+            appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
         }
 
         return appConstants
@@ -54,7 +55,6 @@ class AppConstants {
 
     fun getSetttings() = if (::gameSettings.isInitialized) gameSettings else GameSettings()
 
-
     var orientationChanged = true
 
     private var currentState: GameStates? = null
@@ -62,7 +62,8 @@ class AppConstants {
     fun changeState(state: GameStates) {
         currentState = state
 
-        if (currentState == GameStates.STATE_PAUSED)
+        Log.d("MyTag", "$currentState")
+        if (currentState == GameStates.STATE_PLAYER_PLACE_OBJECTS)
             getEngine().restoreInitialState()
     }
 
@@ -77,15 +78,5 @@ class AppConstants {
     }
 
 
-    fun stopThread(thread: Thread) {
-        var retry = true
-        while (retry) {
-            try {
-                thread.join()
-                retry = false
-            } catch (_: Exception) {
-            }
-        }
-    }
 
 }

@@ -6,25 +6,31 @@ import android.graphics.Paint
 import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.gameLogic.game.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.MovableGameObject
+import com.example.hungrygoat.gameLogic.interfaces.Draw
+import com.example.hungrygoat.gameLogic.interfaces.GoatUpdate
+import com.example.hungrygoat.gameLogic.interfaces.Move
 import com.example.hungrygoat.gameLogic.services.GridHandler
 
 class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
-    MovableGameObject(vx, vy, tag) {
+    MovableGameObject(vx, vy, tag), Draw, GoatUpdate, Move {
 
     val color = Color.YELLOW
+
     override fun draw(canvas: Canvas, paint: Paint) {
         paint.color = color
         canvas.drawCircle(x, y, circleRadius, paint)
     }
 
-    override fun update(gridHandler: GridHandler, wolfObj: Wolf?) {
+    override fun update(gridHandler: GridHandler, wolfObj: Wolf?): Boolean =
         if (hadAvailableCells) {
             val cellToMove = getNextCellToMove(gridHandler, wolfObj)
             move(cellToMove)
             visited.addAll(path)
             hadAvailableCells = false
-        }
-    }
+
+            true
+        } else
+            false
 
 
     private fun getNextCellToMove(gridHandler: GridHandler, wolfObj: Wolf?): Cell? {
@@ -46,7 +52,7 @@ class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
         return cellToMove
     }
 
-    private fun move(cellToMove: Cell?) {
+    override fun move(cellToMove: Cell?) {
         if (cellToMove == null) return
         x = cellToMove.x
         y = cellToMove.y

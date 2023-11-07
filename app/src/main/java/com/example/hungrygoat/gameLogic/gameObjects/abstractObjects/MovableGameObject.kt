@@ -1,13 +1,11 @@
 package com.example.hungrygoat.gameLogic.gameObjects.abstractObjects
 
-import android.graphics.Canvas
-import android.graphics.Paint
 import android.util.Log
 import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.gameLogic.game.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
-import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Wolf
 import com.example.hungrygoat.gameLogic.services.GridHandler
+import kotlin.math.atan2
 
 @Suppress("ConvertArgumentToSet")
 abstract class MovableGameObject(
@@ -48,10 +46,7 @@ abstract class MovableGameObject(
         y = vy
     }
 
-
     fun calcReachedSet(gridHandler: GridHandler) {
-        Log.v("MyTag", "Start setting cur movable reached set")
-
         reachedSet = if (attachedRopes.isEmpty()) {
             gridHandler.getGrid().toSet()
         } else {
@@ -63,20 +58,24 @@ abstract class MovableGameObject(
 
             temp
         }
-        Log.v("MyTag", "Done setting cur movable reached set")
     }
 
-
     fun setBoundary(gridHandler: GridHandler) {
+        fun angleBetween(center: Pair<Float, Float>, point: Cell): Float {
+            val dx = point.x - center.first
+            val dy = point.y - center.second
+            return atan2(dy, dx)
+        }
+
         Log.v("MyTag", "Start setting cur movable boundarys")
-        bounds = gridHandler.getBoundaryCells(reachedSet)
+        val temp = gridHandler.getBoundaryCells(reachedSet)
+
+        val centerX = temp.map { it.x }.average().toFloat()
+        val centerY = temp.map { it.y }.average().toFloat()
+        val center = Pair(centerX, centerY)
+
+        bounds = temp.sortedBy { angleBetween(center, it) }
         Log.v("MyTag", "Done setting cur movable boundarys")
     }
 
-    override fun draw(canvas: Canvas, paint: Paint) {}
-    open fun update(gridHandler: GridHandler, goatHaveAvailableCells: Boolean) {}
-    open fun update(
-        gridHandler: GridHandler, wolfObj: Wolf?,
-    ) {
-    }
 }

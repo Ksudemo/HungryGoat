@@ -21,17 +21,26 @@ class LevelSelectionActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         val levelsList = mutableListOf(
-            Pair("1", true),
-            Pair("2", true),
-            Pair("3", false),
-            Pair("4", false)
+            Pair("Круг", true),
+            Pair("Квадрат", true),
+            Pair("Овал", false),
+            Pair("Треугольник", false)
         )
 
         val adapter = RecyclerViewAdapter(levelsList)
         adapter.setOnItemClickListener(object : RecyclerViewAdapter.onItemClickListener {
             override fun onItemClick(position: Int) {
-                val intent = Intent(applicationContext, LevelActivity::class.java)
-                intent.putExtra("caller", LevelSelectionActivity::class.java)
+                val levelCondition = levelsList[position].first
+
+                val extras = Bundle()
+
+                extras.putString("levelCondition", levelCondition)
+                extras.putSerializable("caller", LevelSelectionActivity::class.java)
+
+                val intent = Intent(applicationContext, LevelActivity::class.java).apply {
+                    putExtras(extras)
+                }
+
                 startActivity(intent)
             }
         })

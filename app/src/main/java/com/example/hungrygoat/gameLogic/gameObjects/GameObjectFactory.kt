@@ -13,9 +13,6 @@ import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Wolf
 import com.example.hungrygoat.gameLogic.services.GridHandler
 import com.example.hungrygoat.gameLogic.services.InputHandler
 import com.example.hungrygoat.gameLogic.services.PhysicService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class GameObjectFactory {
     private val physicService = PhysicService()
@@ -71,10 +68,8 @@ class GameObjectFactory {
                     GameObjectTags.GOAT,
                 ).apply {
                     movableAction {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            calcReachedSet(gridHandler)
-                            setBoundary(gridHandler)
-                        }
+                        calcReachedSet(gridHandler)
+                        setBoundary(gridHandler)
                     }
                     invokeAction()
                 }
@@ -85,10 +80,8 @@ class GameObjectFactory {
                     GameObjectTags.WOLF
                 ).apply {
                     movableAction {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            calcReachedSet(gridHandler)
-                            setBoundary(gridHandler)
-                        }
+                        calcReachedSet(gridHandler)
+                        setBoundary(gridHandler)
                     }
                     invokeAction()
                 }

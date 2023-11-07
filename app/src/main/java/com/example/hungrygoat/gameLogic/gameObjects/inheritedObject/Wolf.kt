@@ -6,11 +6,14 @@ import android.graphics.Paint
 import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.gameLogic.game.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.MovableGameObject
+import com.example.hungrygoat.gameLogic.interfaces.Draw
+import com.example.hungrygoat.gameLogic.interfaces.Move
+import com.example.hungrygoat.gameLogic.interfaces.WolfUpdate
 import com.example.hungrygoat.gameLogic.services.GridHandler
 
 
 class Wolf(x: Float, y: Float, tag: GameObjectTags) :
-    MovableGameObject(x, y, tag) {
+    MovableGameObject(x, y, tag), Draw, WolfUpdate, Move {
 
     val color = Color.RED
 
@@ -40,7 +43,7 @@ class Wolf(x: Float, y: Float, tag: GameObjectTags) :
         }
     }
 
-    private fun move(cellToMove: Cell?) {
+    override fun move(cellToMove: Cell?) {
         if (cellToMove == null) return
         x = cellToMove.x
         y = cellToMove.y

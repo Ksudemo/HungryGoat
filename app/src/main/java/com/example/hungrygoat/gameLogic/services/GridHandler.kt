@@ -7,6 +7,7 @@ import com.example.hungrygoat.gameLogic.game.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.EmptyObject
 import kotlin.math.ceil
+import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.sqrt
 import kotlin.properties.Delegates
@@ -21,6 +22,7 @@ class GridHandler {
     private var neighbors2 = mutableMapOf<Int, List<Int>>()
     private var cellToObjects = mutableMapOf<GameObject, Cell>()
 
+    var cellSize by Delegates.notNull<Float>()
     var numRows by Delegates.notNull<Int>()
     private var numColumns by Delegates.notNull<Int>()
 
@@ -42,7 +44,7 @@ class GridHandler {
         val cellHeight = getSize(numRows, height)
         val cellWidth = getSize(numColumns, width)
 
-        val cellSize = min(cellHeight, cellWidth)
+        cellSize = min(cellHeight, cellWidth)
         numRows = ceil(height / cellSize).toInt()
         numColumns = ceil(width / cellSize).toInt()
 
@@ -65,7 +67,7 @@ class GridHandler {
                     continue
                 }
 
-                temp.add(Cell(rect))
+                temp.add(Cell(rect, rect.centerX(), rect.centerY()))
             }
         if (atLeastOneCellRemovedFromBottom)
             numRows -= 1
@@ -131,19 +133,11 @@ class GridHandler {
         val dx = xFrom - x
         val dy = yFrom - y
 
-        return sqrt(dx * dx + dy * dy)
+        return sqrt(hypot(dx, dy))
     }
 
-    fun getBoundaryCells(availableTargets: Set<Cell>): List<Cell> {
-        val boundaryCells = mutableListOf<Cell>()
-
-        availableTargets.forEach {
-            if (isBoundaryCell(availableTargets, it))
-                boundaryCells.add(it)
-        }
-
-        return boundaryCells
-    }
+    fun getBoundaryCells(availableTargets: Set<Cell>): List<Cell> =
+        availableTargets.filter { isBoundaryCell(availableTargets, it) }
 
     private fun isBoundaryCell(bounds: Set<Cell>, cell: Cell): Boolean {
         val cellNeighbors = getCellNeighbors(cell)

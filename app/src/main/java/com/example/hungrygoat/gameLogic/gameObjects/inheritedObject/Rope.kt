@@ -7,6 +7,7 @@ import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.gameLogic.game.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.RopeGameObject
+import com.example.hungrygoat.gameLogic.interfaces.Draw
 import com.example.hungrygoat.gameLogic.services.GridHandler
 import kotlin.math.ceil
 
@@ -16,7 +17,7 @@ class Rope(
     private val isTiedToRope: Boolean,
     ropeLength: Float,
     tag: GameObjectTags,
-) : RopeGameObject(objectFrom, tag) {
+) : RopeGameObject(objectFrom, tag), Draw {
 
     val color = Color.BLACK
 
@@ -81,7 +82,7 @@ class Rope(
         return d <= maxLength
     }
 
-    private fun getAnchorPoint() = getRopeNode() ?: getPeg()
+    private fun getAnchorPoint(): GameObject? = getRopeNode() ?: getPeg()
 
     private fun getRopeConnectedTo(): Rope? =
         if (!isTiedToRope)

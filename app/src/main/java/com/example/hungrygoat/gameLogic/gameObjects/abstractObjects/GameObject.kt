@@ -13,7 +13,6 @@ abstract class GameObject(vx: Float, vy: Float, tg: GameObjectTags) {
     var circleRadius = 40f
     var isSelected = false
 
-    open fun draw(canvas: Canvas, paint: Paint) {}
     fun drawBase(canvas: Canvas, paint: Paint) {
         canvas.drawCircle(x, y, circleRadius, paint.apply {
             color = Color.WHITE

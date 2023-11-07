@@ -2,6 +2,7 @@ package com.example.hungrygoat.app.activities
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.View.OnClickListener
 import android.widget.Button
@@ -42,16 +43,27 @@ class StartActivity : AppCompatActivity(), OnClickListener {
 
     override fun onClick(view: View?) {
         val intent: Intent = when (view?.id) {
-            R.id.playLastButton -> Intent(
-                applicationContext,
-                LevelActivity::class.java
-            ).apply { putExtra("caller", StartActivity::class.java) }
+            R.id.playLastButton -> {
+                val extras = Bundle()
+
+                extras.putSerializable("caller", StartActivity::class.java)
+                extras.putString("levelCondition", "круг")
+
+                Intent(
+                    applicationContext,
+                    LevelActivity::class.java
+                ).putExtras(extras)
+
+            }
 
             R.id.settingsButton -> Intent(applicationContext, SettingsActivity::class.java)
             R.id.levelSelectButton -> Intent(applicationContext, LevelSelectionActivity::class.java)
             R.id.rulesButton -> Intent(applicationContext, RulesActivity::class.java)
             else -> Intent(applicationContext, SettingsActivity::class.java)
         }
+
+        Log.d("MyTag", "Start activiyy bundle is ${intent.extras}")
+
         startActivity(intent)
     }
 }

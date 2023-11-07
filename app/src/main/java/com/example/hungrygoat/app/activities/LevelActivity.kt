@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.View.OnClickListener
 import android.widget.Button
@@ -15,15 +16,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.example.hungrygoat.R
 import com.example.hungrygoat.app.helpers.CountUpTimer
-import com.example.hungrygoat.app.helpers.MyDialogFragment
+import com.example.hungrygoat.app.helpers.alertDialogs.LevelInfoDialog
 import com.example.hungrygoat.constants.AppConstants
 import com.example.hungrygoat.constants.GameStates
 import com.example.hungrygoat.constants.PickedOptions
 import com.example.hungrygoat.constants.SingletonAppConstantsInfo
+import com.example.hungrygoat.gameLogic.game.GameThread
 import com.example.hungrygoat.gameLogic.game.GameView
 
 @Suppress("SameParameterValue")
-class LevelActivity() : AppCompatActivity(), OnClickListener {
+class LevelActivity() : AppCompatActivity(), OnClickListener, GameThread.LevelDoneListener {
 
     private lateinit var backImgButton: ImageButton
     private lateinit var levelCondImgButton: ImageButton
@@ -46,11 +48,18 @@ class LevelActivity() : AppCompatActivity(), OnClickListener {
 
     private val dialogTag = "MyDialog"
 
+    private var levelCondition = ""
+
+    private lateinit var gameThread: GameThread
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.level_layout)
 
+        val extras = intent.extras
+        levelCondition = extras?.getString("levelCondition") ?: "Ошибка в определнии условия"
+
         setViews()
+
         appConstants = SingletonAppConstantsInfo.getAppConst()
 
         val s1 = resources.getString(R.string.pick_cell_size)
@@ -63,6 +72,7 @@ class LevelActivity() : AppCompatActivity(), OnClickListener {
             resources.getString(R.string.sharedPrefsSettingsName),
             Context.MODE_PRIVATE
         )
+
         settings.apply {
             appConstants.setGameSettings(
                 getFloat(s1, 20f),
@@ -75,15 +85,59 @@ class LevelActivity() : AppCompatActivity(), OnClickListener {
         }
         setTimer()
     }
-
     override fun onResume() {
         super.onResume()
+        val holder = gameView.holder
+
+        gameThread = GameThread(holder, gameView, "MyFavoriteThread", levelCondition)
+        gameThread.registerEventListener(this)
+
+        gameView.setGameThread(gameThread)
+
         gameView.initView()
     }
 
     override fun onStop() {
         super.onStop()
+
+        gameThread.unregisterEventListener(this)
+        appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
         appConstants.getEngine().killEngine()
+    }
+
+    override fun onLevelDoneEvent() {
+        Log.d("MyTag", "Level done!")
+//        val manager = supportFragmentManager
+//        val transaction = manager.beginTransaction()
+//        val dialog = LevelDoneDialog()
+//
+//        val bundle = Bundle()
+//        bundle.putString("title", "Поздравляю!")
+//        bundle.putString(
+//            "text",
+//            "Поздравляю, вы прошли уровень за ${timeTextView.text}!\n Хотите попробовать ещё раз или перейти к следующему уровню?"
+//        )
+//        bundle.putString("posButton", "Следующий уровень")
+//        bundle.putString("negButton", "Ещё раз")
+//
+//        dialog.arguments = bundle
+//        dialog.show(manager, dialogTag)
+//        transaction.commit()
+
+//        while (dialog.isPositiveButtonClicked() == null) {}
+
+//        val shouldStartNewLevel = dialog.isPositiveButtonClicked()!!
+//
+//        if (shouldStartNewLevel) {
+//            createDialog("агаа", "Будут уровни - будет и переход между ними (:", "Окк", "Бубубу")
+//            //
+//            appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
+//            updateTimer(appConstants.getState()!!, false)
+//            // New Code level
+//        } else {
+//            appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
+//            updateTimer(appConstants.getState()!!, false)
+//        }
     }
 
     private fun setViews() {
@@ -102,7 +156,7 @@ class LevelActivity() : AppCompatActivity(), OnClickListener {
         ).apply { weight = 1f }
         ll.addView(gameView)
 
-        ll.addView(getButtonsLinearLayout(4, listOf("Колышек", "Верёвка", "Коза", "Волк")))
+        ll.addView(getButtonsLinearLayout(4, listOf("Колышек", "Верёвка", "Коза", "Собака")))
 
         backImgButton.setOnClickListener(this)
         levelCondImgButton.setOnClickListener(this)
@@ -125,7 +179,7 @@ class LevelActivity() : AppCompatActivity(), OnClickListener {
             }
         }
 
-        updateTimer(GameStates.STATE_PAUSED, false)
+        updateTimer(GameStates.STATE_PLAYER_PLACE_OBJECTS, false)
     }
 
     private fun createDialog(
@@ -136,7 +190,7 @@ class LevelActivity() : AppCompatActivity(), OnClickListener {
     ) {
         val manager = supportFragmentManager
         val transaction = manager.beginTransaction()
-        val dialog = MyDialogFragment()
+        val dialog = LevelInfoDialog()
 
         val bundle = Bundle()
         bundle.putString("title", titleString)
@@ -163,15 +217,15 @@ class LevelActivity() : AppCompatActivity(), OnClickListener {
             R.id.levelConditionImgButton -> {
                 createDialog(
                     "Условие уровня",
-                    "Тут будет условие уровня (:",
+                    "Нарисуйте $levelCondition",
                     "Круто!",
                     "Не круто :("
                 )
             }
 
             R.id.clearCanvasImgButton -> {
-                updateTimer(GameStates.STATE_PAUSED, true)
-                appConstants.changeState(GameStates.STATE_PAUSED)
+                updateTimer(GameStates.STATE_PLAYER_PLACE_OBJECTS, true)
+                appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
                 appConstants.getEngine().clearObjects()
 
                 recheckButtons(buttons, -1)
@@ -179,10 +233,10 @@ class LevelActivity() : AppCompatActivity(), OnClickListener {
 
             R.id.playImgButton -> {
                 val currentState =
-                    if (appConstants.getState() == GameStates.STATE_PAUSED)
-                        GameStates.STATE_PLAY
+                    if (appConstants.getState() == GameStates.STATE_PLAYER_PLACE_OBJECTS)
+                        GameStates.STATE_OBJECTS_MOVING
                     else
-                        GameStates.STATE_PAUSED
+                        GameStates.STATE_PLAYER_PLACE_OBJECTS
 
                 updateTimer(currentState, false)
                 appConstants.changeState(currentState)
@@ -194,7 +248,7 @@ class LevelActivity() : AppCompatActivity(), OnClickListener {
 
     private fun updateTimer(state: GameStates, resetTimer: Boolean) {
         lastTime = if (resetTimer) 0 else lastTime
-        if (state == GameStates.STATE_PLAY) {
+        if (state == GameStates.STATE_OBJECTS_MOVING) {
             timer.cancel()
 //            timeTextView.text = "" //resources.getText(R.string.pause)
         } else timer.start()
@@ -253,4 +307,5 @@ class LevelActivity() : AppCompatActivity(), OnClickListener {
         }
         return buttonsPaneLinearLayout
     }
+
 }

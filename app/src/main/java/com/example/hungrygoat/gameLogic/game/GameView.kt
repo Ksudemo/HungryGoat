@@ -3,6 +3,7 @@ package com.example.hungrygoat.gameLogic.game
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -10,7 +11,8 @@ import com.example.hungrygoat.constants.SingletonAppConstantsInfo
 
 class GameView(context: Context, attrs: AttributeSet? = null) :
     SurfaceView(context, attrs), SurfaceHolder.Callback {
-    private lateinit var displayThread: DisplayThread
+
+    private var gameThread: GameThread? = null
 
     init {
         initView()
@@ -19,29 +21,27 @@ class GameView(context: Context, attrs: AttributeSet? = null) :
     fun initView() {
         val holder = holder
         holder.addCallback(this)
-
-        displayThread = DisplayThread(holder)
         isFocusable = true
     }
 
-
-    override fun surfaceCreated(arg0: SurfaceHolder) {
-        //Starts the display thread
-        if (!::displayThread.isInitialized) {
-            displayThread = DisplayThread(holder)
-            displayThread.start()
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        if (gameThread == null) {
+            gameThread = GameThread(holder, this, "", "")
+            gameThread!!.setRunning(true)
+            gameThread!!.start()
         } else {
-            displayThread.start()
+            gameThread!!.start()
         }
     }
 
-    override fun surfaceChanged(arg0: SurfaceHolder, arg1: Int, arg2: Int, arg3: Int) {
+    override fun surfaceChanged(p0: SurfaceHolder, p1: Int, p2: Int, p3: Int) {
         SingletonAppConstantsInfo.getAppConst().orientationChanged = true
     }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_DOWN) {
+            Log.d("MyTag", "click")
             SingletonAppConstantsInfo.getAppConst().apply {
                 getEngine().createNewObject(
                     event.x, event.y,
@@ -52,9 +52,21 @@ class GameView(context: Context, attrs: AttributeSet? = null) :
         return true
     }
 
-    override fun surfaceDestroyed(arg0: SurfaceHolder) {
-        displayThread.setIsRunning(false)
-        SingletonAppConstantsInfo.getAppConst().stopThread(displayThread)
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        // Здесь можно остановить и очистить gameThread
+        if (gameThread != null) {
+            gameThread?.stopThread()
+            try {
+                gameThread?.join()
+                gameThread = null
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+            }
+        }
+    }
 
+    // Добавьте метод для установки GameThread из MainActivity
+    fun setGameThread(thread: GameThread) {
+        gameThread = thread
     }
 }

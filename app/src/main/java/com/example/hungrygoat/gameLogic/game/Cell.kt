@@ -3,10 +3,7 @@ package com.example.hungrygoat.gameLogic.game
 import android.graphics.RectF
 import com.example.hungrygoat.gameLogic.services.GridHandler
 
-class Cell(rct: RectF) {
-    val x = rct.centerX()
-    val y = rct.centerY()
-    val rect = rct
+class Cell(val rect: RectF, val x: Float, val y: Float) {
 
     fun getNeighbors(gridHandler: GridHandler): List<Cell> {
         val result = mutableListOf<Cell>()

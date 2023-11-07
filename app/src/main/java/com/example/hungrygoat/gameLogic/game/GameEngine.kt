@@ -13,10 +13,14 @@ import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Wolf
 import com.example.hungrygoat.gameLogic.services.GridHandler
 import com.example.hungrygoat.gameLogic.services.RenderService
+import com.example.hungrygoat.gameLogic.services.SolutionService
 
 class GameEngine {
 
     companion object {
+
+        private val solutionService = SolutionService()
+
         private val renderService = RenderService()
 
         private val gridHandler = GridHandler()
@@ -42,6 +46,7 @@ class GameEngine {
         objects.clear()
         ropes.clear()
 
+
         goat = null
         wolf = null
 
@@ -52,8 +57,25 @@ class GameEngine {
         objects.find { it.isSelected }?.isSelected = false
     }
 
+    fun checkSolution(levelCondition: String) =
+        if (goat == null) false else solutionService.checkSolution(
+            goat!!,
+            goat!!.bounds,
+            gridHandler.cellSize,
+            levelCondition
+        )
+
+
     fun update() {
-        goat?.update(gridHandler, wolf)
+        if (goat != null) {
+            val updateSuccess = goat?.update(gridHandler, wolf)
+
+
+            val appC = SingletonAppConstantsInfo.getAppConst()
+            if (updateSuccess == false && appC.getState() != GameStates.STATE_CHECK_SOLUTION) {
+                appC.changeState(GameStates.STATE_CHECK_SOLUTION)
+            }
+        }
         wolf?.update(gridHandler, goat?.hadAvailableCells ?: false)
     }
 
@@ -70,7 +92,7 @@ class GameEngine {
     fun createNewObject(x: Float, y: Float, pickedOption: PickedOptions) {
         val currentState = SingletonAppConstantsInfo.getAppConst().getState()
 
-        if (currentState == GameStates.STATE_PAUSED) {
+        if (currentState == GameStates.STATE_PLAYER_PLACE_OBJECTS) {
             val createdObject =
                 gameObjectFactory.createNewObject(
                     x, y, objects.find { it.isSelected }, pickedOption, gridHandler
@@ -144,8 +166,8 @@ class GameEngine {
 
 
     fun killEngine() {
-        clearObjects()
-        gridHandler.freeGrid()
+//        clearObjects()
+//        gridHandler.freeGrid()
     }
 
 }
