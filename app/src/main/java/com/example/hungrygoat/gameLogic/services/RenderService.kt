@@ -85,7 +85,6 @@ class RenderService {
         }
 
 
-
         ruller.forEach {
             val a = it[0] as GameObject
             val b = it[1] as GameObject
@@ -125,7 +124,7 @@ class RenderService {
         }
         val screenHeight = cellSize * numRows
         val screenWidth = cellSize * numCols
-        val bounds = goat?.bounds2 // TODO Should be bounds not bounds2
+        val bounds = goat?.bounds// goat?.bounds2 // TODO Should be bounds not bounds2
         try {
             if (!bounds.isNullOrEmpty()) {
 

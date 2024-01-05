@@ -26,7 +26,7 @@ class GameView(context: Context, attrs: AttributeSet? = null) :
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         if (gameThread == null) {
-            gameThread = GameThread(holder, this, "", LevelConditions.EMPTY)
+            gameThread = GameThread(holder, "", LevelConditions.EMPTY)
             gameThread!!.setRunning(true)
             gameThread!!.start()
         } else {

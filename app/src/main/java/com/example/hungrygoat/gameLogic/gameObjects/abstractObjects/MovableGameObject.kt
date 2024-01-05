@@ -77,9 +77,9 @@ abstract class MovableGameObject(
         val centerY = temp.map { it.y }.average().toFloat()
         val center = Pair(centerX, centerY)
 
-        bounds = temp.sortedBy { angleBetween(center, it) }
-        bounds2 = //removeRedundantCells(bounds)
-            removeCollinearCells(bounds) // TODO доделать фильтр на лишние клетки + удалить bounds2 (тест онли) + удалить из рендера
+        bounds = removeCollinearCells(temp.sortedBy { angleBetween(center, it) })
+//        bounds2 = //removeRedundantCells(bounds)
+//            removeCollinearCells(bounds) // TODO доделать фильтр на лишние клетки + удалить bounds2 (тест онли) + удалить из рендера
         Log.v("MyTag", "Done setting cur movable boundarys")
     }
 

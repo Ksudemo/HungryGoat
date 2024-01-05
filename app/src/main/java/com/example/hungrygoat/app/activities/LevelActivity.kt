@@ -98,7 +98,7 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
         super.onResume()
         val holder = gameView.holder
 
-        gameThread = GameThread(holder, gameView, "MyFavoriteThread", levelCondition)
+        gameThread = GameThread(holder, "MyFavoriteThread", levelCondition)
         gameThread.registerEventListener(this)
 
         gameView.setGameThread(gameThread)

@@ -24,8 +24,8 @@ class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
         if (hadAvailableCells) {
             val cellToMove = getNextCellToMove(gridHandler, dogObj)
             move(cellToMove)
-//            visited.addAll(path)
-//            hadAvailableCells = false
+            visited.addAll(path)
+            hadAvailableCells = false
             true
         } else
             false
