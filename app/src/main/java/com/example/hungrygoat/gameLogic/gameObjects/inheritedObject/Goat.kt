@@ -15,45 +15,43 @@ class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
     MovableGameObject(vx, vy, tag), Draw, GoatUpdate, Move {
 
     val color = Color.YELLOW
-
     override fun draw(canvas: Canvas, paint: Paint) {
         paint.color = color
         canvas.drawCircle(x, y, circleRadius, paint)
     }
 
-    override fun update(gridHandler: GridHandler, wolfObj: Wolf?): Boolean =
+    override fun update(gridHandler: GridHandler, dogObj: Dog?): Boolean =
         if (hadAvailableCells) {
-            val cellToMove = getNextCellToMove(gridHandler, wolfObj)
+            val cellToMove = getNextCellToMove(gridHandler, dogObj)
             move(cellToMove)
-            visited.addAll(path)
-            hadAvailableCells = false
-
+//            visited.addAll(path)
+//            hadAvailableCells = false
             true
         } else
             false
 
-
-    private fun getNextCellToMove(gridHandler: GridHandler, wolfObj: Wolf?): Cell? {
+    private fun getNextCellToMove(gridHandler: GridHandler, dogObj: Dog?): Cell? {
         if (path.isNotEmpty())
             return (path - visited.toSet()).firstOrNull()
 
-        println("get nextCell to move")
-        val wolfReachedSet = wolfObj?.reachedSet ?: emptySet()
-        val availableCells = reachedSet - (wolfReachedSet + visited)
+        val dogReachedSet = dogObj?.reachedSet ?: emptySet()
+        val availableCells = reachedSet - (dogReachedSet + visited)
 
-        val goatCell = gridHandler.getObjectCell(this)
+        gridHandler.getObjectCell(this)
 
-        path = availableCells
-//            availableCells.sortedBy { gridHandler.getDistanceBetweenCells(goatCell, it) }
+        path = availableCells.sortedBy { gridHandler.distBetween(this, it.x, it.y) }.toSet()
 
         val cellToMove = path.firstOrNull()
         hadAvailableCells = cellToMove != null
-
         return cellToMove
     }
 
     override fun move(cellToMove: Cell?) {
-        if (cellToMove == null) return
+        if (cellToMove == null) {
+            hadAvailableCells = false
+            return
+        }
+
         x = cellToMove.x
         y = cellToMove.y
 

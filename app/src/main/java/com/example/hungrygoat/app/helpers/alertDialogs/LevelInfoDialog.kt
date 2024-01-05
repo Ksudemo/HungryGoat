@@ -9,13 +9,12 @@ class LevelInfoDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return activity?.let {
             val builder = AlertDialog.Builder(it)
-            println(arguments)
             builder.setTitle(arguments?.getString("title"))
                 .setMessage(arguments?.getString("text"))
-                .setPositiveButton(arguments?.getString("posButton")) { dialog, id ->
+                .setPositiveButton(arguments?.getString("posButton")) { dialog, _ ->
                     dialog.cancel()
                 }
-                .setNegativeButton(arguments?.getString("negButton")) { dialog, id ->
+                .setNegativeButton(arguments?.getString("negButton")) { dialog, _ ->
                     dialog.cancel()
                 }
             builder.create()

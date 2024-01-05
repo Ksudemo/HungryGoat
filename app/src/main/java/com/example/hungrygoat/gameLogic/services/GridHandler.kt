@@ -24,7 +24,7 @@ class GridHandler {
 
     var cellSize by Delegates.notNull<Float>()
     var numRows by Delegates.notNull<Int>()
-    private var numColumns by Delegates.notNull<Int>()
+    var numColumns by Delegates.notNull<Int>()
 
     fun getGrid() = grid
     fun setGrid(width: Int, height: Int, theoreticalCellSize: Float) {
@@ -105,11 +105,13 @@ class GridHandler {
         return sqrt(dx * dx + dy * dy)
     }
 
+    fun getClosestObject(obj: GameObject, objs: List<GameObject>) =
+        objs.minByOrNull { distBetween(obj, it) }
+
     fun distBetween(obj: GameObject, otherX: Float, otherY: Float) =
         distBetween(obj, EmptyObject(otherX, otherY, GameObjectTags.EMPTY))
 
     fun distBetween(obj1: GameObject, obj2: GameObject): Float {
-
         if (distances.contains(obj1) && distances[obj1]?.contains(obj2) == true)
             return distances[obj1]!![obj2]!!
 

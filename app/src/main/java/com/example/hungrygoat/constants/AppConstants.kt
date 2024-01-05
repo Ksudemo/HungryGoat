@@ -17,6 +17,21 @@ object SingletonAppConstantsInfo {
     }
 }
 
+
+val translatedMap = mapOf(
+    LevelConditions.CIRCLE to "Круг",
+    LevelConditions.HALFCIRCLE to "Полукруг",
+    LevelConditions.RING to "Кольцо",
+    LevelConditions.HALFRING to "Полукольцо",
+    LevelConditions.MOON to "Месяц",
+    LevelConditions.SQUARE to "Квадрат",
+    LevelConditions.TRIANGLE to "Треугольник",
+    LevelConditions.LEAF to "(Лист) Пересечение кругов",
+    LevelConditions.HEXAGON to "Шестиугольник",
+    LevelConditions.ARROW to "Стрелка",
+    LevelConditions.RAINDROP to "Капля",
+)
+
 const val deffultCellSize = 20f
 
 data class GameSettings(
@@ -25,7 +40,7 @@ data class GameSettings(
     var drawCellIndex: Boolean = false,
     var drawRopeNodes: Boolean = false,
     var drawGoatBounds: Boolean = false,
-    var drawWolfBounds: Boolean = false,
+    var drawDogBounds: Boolean = false,
 )
 
 class AppConstants {
@@ -35,13 +50,22 @@ class AppConstants {
 
     private lateinit var gameSettings: GameSettings
 
+    var levelsList = mutableListOf<Pair<LevelConditions, Boolean>>()
+    var translatedList = listOf<Pair<String, Boolean>>()
+    fun setLevelConditionsList() {
+        levelsList = LevelConditions.entries.map { it to true }.toMutableList()
+        levelsList.removeIf { it.first == LevelConditions.EMPTY }
+        translatedList = levelsList.map { (translatedMap[it.first] ?: "") to it.second }
+        Log.d("MyTag", "$levelsList")
+    }
+
     fun setGameSettings(
         gridHandlerCellSize: Float,
         renderType: String,
         drawCellIndex: Boolean,
         drawRopeNodes: Boolean,
         drawGoatBounds: Boolean,
-        drawWolfBounds: Boolean,
+        drawDogBounds: Boolean,
     ) {
         gameSettings = GameSettings(
             gridHandlerCellSize,
@@ -49,7 +73,7 @@ class AppConstants {
             drawCellIndex,
             drawRopeNodes,
             drawGoatBounds,
-            drawWolfBounds,
+            drawDogBounds,
         )
     }
 
@@ -76,7 +100,6 @@ class AppConstants {
             engine.resetTempObj()
         currentOption = option
     }
-
 
 
 }

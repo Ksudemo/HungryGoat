@@ -22,7 +22,7 @@ class SettingsActivity : AppCompatActivity(), OnClickListener {
     //    private lateinit var pickRenderTypeSpinner: Spinner
     private lateinit var cellIndexCheckBox: CheckBox
     private lateinit var drawRopeNodesCheckBox: CheckBox
-    private lateinit var drawWolfBoundsCheckBox: CheckBox
+    private lateinit var drawDogBoundsCheckBox: CheckBox
     private lateinit var drawGoatBoundsCheckBox: CheckBox
 
     private lateinit var saveSettingButton: Button
@@ -41,14 +41,14 @@ class SettingsActivity : AppCompatActivity(), OnClickListener {
 
         cellIndexCheckBox = findViewById(R.id.cellIndexCheckBox)
         drawRopeNodesCheckBox = findViewById(R.id.drawRopeNodesCheckBox)
-        drawWolfBoundsCheckBox = findViewById(R.id.drawWolfBoundsCheckBox)
+        drawDogBoundsCheckBox = findViewById(R.id.drawDogBoundsCheckBox)
         drawGoatBoundsCheckBox = findViewById(R.id.drawGoatBoundsCheckBox)
 
         s1 = resources.getString(R.string.pick_cell_size)
         s2 = resources.getString(R.string.enableDrawCellIndex)
         s3 = resources.getString(R.string.enableDrawRopeNodes)
         s4 = resources.getString(R.string.enableRenderGoatBounds)
-        s5 = resources.getString(R.string.enableRenderWolfBounds)
+        s5 = resources.getString(R.string.enableRenderDogBounds)
 
         settings = applicationContext.getSharedPreferences(
             resources.getString(R.string.sharedPrefsSettingsName),
@@ -58,7 +58,7 @@ class SettingsActivity : AppCompatActivity(), OnClickListener {
         cellIndexCheckBox.isChecked = settings.getBoolean(s2, false)
         drawRopeNodesCheckBox.isChecked = settings.getBoolean(s3, false)
         drawGoatBoundsCheckBox.isChecked = settings.getBoolean(s4, false)
-        drawWolfBoundsCheckBox.isChecked = settings.getBoolean(s5, false)
+        drawDogBoundsCheckBox.isChecked = settings.getBoolean(s5, false)
 
         saveSettingButton = findViewById(R.id.saveSettingsButton)
         saveSettingButton.setOnClickListener(this)
@@ -97,8 +97,6 @@ class SettingsActivity : AppCompatActivity(), OnClickListener {
     }
 
     private fun getItemToSelect(lst: List<String>, itemToSearch: String): Int {
-        println(lst)
-        println(itemToSearch)
         lst.forEachIndexed { i, str ->
             if (str.contains(itemToSearch)) return i
         }
@@ -125,7 +123,7 @@ class SettingsActivity : AppCompatActivity(), OnClickListener {
                     putBoolean(s2, cellIndexCheckBox.isChecked)
                     putBoolean(s3, drawRopeNodesCheckBox.isChecked)
                     putBoolean(s4, drawGoatBoundsCheckBox.isChecked)
-                    putBoolean(s5, drawWolfBoundsCheckBox.isChecked)
+                    putBoolean(s5, drawDogBoundsCheckBox.isChecked)
                     apply()
                 }
 

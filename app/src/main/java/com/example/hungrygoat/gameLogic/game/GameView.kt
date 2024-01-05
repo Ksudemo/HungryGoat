@@ -3,10 +3,10 @@ package com.example.hungrygoat.gameLogic.game
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import com.example.hungrygoat.constants.LevelConditions
 import com.example.hungrygoat.constants.SingletonAppConstantsInfo
 
 class GameView(context: Context, attrs: AttributeSet? = null) :
@@ -26,7 +26,7 @@ class GameView(context: Context, attrs: AttributeSet? = null) :
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         if (gameThread == null) {
-            gameThread = GameThread(holder, this, "", "")
+            gameThread = GameThread(holder, this, "", LevelConditions.EMPTY)
             gameThread!!.setRunning(true)
             gameThread!!.start()
         } else {
@@ -40,10 +40,16 @@ class GameView(context: Context, attrs: AttributeSet? = null) :
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_DOWN) {
-            Log.d("MyTag", "click")
+        if (event.action == MotionEvent.ACTION_UP) {
             SingletonAppConstantsInfo.getAppConst().apply {
                 getEngine().createNewObject(
+                    event.x, event.y,
+                    getOption()!!
+                )
+            }
+        } else if (event.action == MotionEvent.ACTION_MOVE) {
+            SingletonAppConstantsInfo.getAppConst().apply {
+                getEngine().tempCreateNewObjectOnMove(
                     event.x, event.y,
                     getOption()!!
                 )

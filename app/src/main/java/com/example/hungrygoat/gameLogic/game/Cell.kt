@@ -2,6 +2,8 @@ package com.example.hungrygoat.gameLogic.game
 
 import android.graphics.RectF
 import com.example.hungrygoat.gameLogic.services.GridHandler
+import kotlin.math.acos
+import kotlin.math.sqrt
 
 class Cell(val rect: RectF, val x: Float, val y: Float) {
 
@@ -51,5 +53,13 @@ class Cell(val rect: RectF, val x: Float, val y: Float) {
         if (topExtraCond && topRight in grid.indices) result.add(topRight)
 
         return result
+    }
+
+    fun angleBetween(other: Cell): Double {
+        val dotProduct = this.x * other.x + this.y * other.y
+        val magP1 = sqrt(this.x * this.x + this.y * this.y)
+        val magP2 = sqrt(other.x * other.x + other.y * other.y)
+
+        return Math.toDegrees(acos(dotProduct / (magP1 * magP2).toDouble()))
     }
 }

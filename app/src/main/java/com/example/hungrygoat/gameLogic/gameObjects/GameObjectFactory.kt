@@ -4,12 +4,12 @@ import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.constants.PickedOptions
 import com.example.hungrygoat.gameLogic.game.GameEngine
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Dog
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.EmptyObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Peg
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.RopeNode
-import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Wolf
 import com.example.hungrygoat.gameLogic.services.GridHandler
 import com.example.hungrygoat.gameLogic.services.InputHandler
 import com.example.hungrygoat.gameLogic.services.PhysicService
@@ -50,7 +50,7 @@ class GameObjectFactory {
 
                     if (tempObj == null) {
                         clickedGameObject?.apply {
-                            isSelected = true
+                            isTempOnRopeSet = true
                         }
                     } else
                         setRope(gridHandler, tempObj, clickedGameObject, nodes)
@@ -74,10 +74,10 @@ class GameObjectFactory {
                     invokeAction()
                 }
 
-                PickedOptions.WOLF -> Wolf(
+                PickedOptions.DOG -> Dog(
                     centerX,
                     centerY,
-                    GameObjectTags.WOLF
+                    GameObjectTags.DOG
                 ).apply {
                     movableAction {
                         calcReachedSet(gridHandler)
@@ -108,8 +108,8 @@ class GameObjectFactory {
         )
             null
         else {
-            tempObj.isSelected = false
-            clickedObj.isSelected = false
+            tempObj.isTempOnRopeSet = false
+            clickedObj.isTempOnRopeSet = false
 
             val length = gridHandler.distBetween(tempObj, clickedObj)
             val isTiedToRope = nodes.isNotEmpty()

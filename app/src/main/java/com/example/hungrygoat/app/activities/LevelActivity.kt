@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -12,6 +13,7 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.example.hungrygoat.R
@@ -19,13 +21,15 @@ import com.example.hungrygoat.app.helpers.CountUpTimer
 import com.example.hungrygoat.app.helpers.alertDialogs.LevelInfoDialog
 import com.example.hungrygoat.constants.AppConstants
 import com.example.hungrygoat.constants.GameStates
+import com.example.hungrygoat.constants.LevelConditions
 import com.example.hungrygoat.constants.PickedOptions
 import com.example.hungrygoat.constants.SingletonAppConstantsInfo
+import com.example.hungrygoat.constants.translatedMap
 import com.example.hungrygoat.gameLogic.game.GameThread
 import com.example.hungrygoat.gameLogic.game.GameView
 
 @Suppress("SameParameterValue")
-class LevelActivity() : AppCompatActivity(), OnClickListener, GameThread.LevelDoneListener {
+class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDoneListener {
 
     private lateinit var backImgButton: ImageButton
     private lateinit var levelCondImgButton: ImageButton
@@ -48,7 +52,7 @@ class LevelActivity() : AppCompatActivity(), OnClickListener, GameThread.LevelDo
 
     private val dialogTag = "MyDialog"
 
-    private var levelCondition = ""
+    private var levelCondition: LevelConditions = LevelConditions.EMPTY
 
     private lateinit var gameThread: GameThread
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,7 +60,11 @@ class LevelActivity() : AppCompatActivity(), OnClickListener, GameThread.LevelDo
         setContentView(R.layout.level_layout)
 
         val extras = intent.extras
-        levelCondition = extras?.getString("levelCondition") ?: "Ошибка в определнии условия"
+        levelCondition =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                extras?.getSerializable("levelCondition", LevelConditions::class.java)
+                    ?: LevelConditions.EMPTY
+            } else extras?.getSerializable("levelCondition") as LevelConditions
 
         setViews()
 
@@ -66,7 +74,7 @@ class LevelActivity() : AppCompatActivity(), OnClickListener, GameThread.LevelDo
         val s2 = resources.getString(R.string.enableDrawCellIndex)
         val s3 = resources.getString(R.string.enableDrawRopeNodes)
         val s4 = resources.getString(R.string.enableRenderGoatBounds)
-        val s5 = resources.getString(R.string.enableRenderWolfBounds)
+        val s5 = resources.getString(R.string.enableRenderDogBounds)
 
         val settings = applicationContext.getSharedPreferences(
             resources.getString(R.string.sharedPrefsSettingsName),
@@ -85,6 +93,7 @@ class LevelActivity() : AppCompatActivity(), OnClickListener, GameThread.LevelDo
         }
         setTimer()
     }
+
     override fun onResume() {
         super.onResume()
         val holder = gameView.holder
@@ -107,37 +116,23 @@ class LevelActivity() : AppCompatActivity(), OnClickListener, GameThread.LevelDo
 
     override fun onLevelDoneEvent() {
         Log.d("MyTag", "Level done!")
-//        val manager = supportFragmentManager
-//        val transaction = manager.beginTransaction()
-//        val dialog = LevelDoneDialog()
-//
-//        val bundle = Bundle()
-//        bundle.putString("title", "Поздравляю!")
-//        bundle.putString(
-//            "text",
-//            "Поздравляю, вы прошли уровень за ${timeTextView.text}!\n Хотите попробовать ещё раз или перейти к следующему уровню?"
-//        )
-//        bundle.putString("posButton", "Следующий уровень")
-//        bundle.putString("negButton", "Ещё раз")
-//
-//        dialog.arguments = bundle
-//        dialog.show(manager, dialogTag)
-//        transaction.commit()
-
-//        while (dialog.isPositiveButtonClicked() == null) {}
-
-//        val shouldStartNewLevel = dialog.isPositiveButtonClicked()!!
-//
-//        if (shouldStartNewLevel) {
-//            createDialog("агаа", "Будут уровни - будет и переход между ними (:", "Окк", "Бубубу")
-//            //
-//            appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
-//            updateTimer(appConstants.getState()!!, false)
-//            // New Code level
-//        } else {
-//            appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
-//            updateTimer(appConstants.getState()!!, false)
-//        }
+        runOnUiThread {
+            Toast.makeText(
+                applicationContext,
+                "Вы прошли уровень за $lastTime сек.",
+                Toast.LENGTH_SHORT
+            ).show()
+            /*
+               TODO
+                Добавить меню с горизонтальными кнопками:
+                 "Повторить уровень" "Следующий уровень"
+                 И текстом отображающем текущее время в центре
+                 Если повторить, то сбросить таймер в ноль, а если следующий, то выбрать следущее условие и сбросить таймер в ноль
+             */
+//            val popupMenu = PopupMenu(applicationContext, gameView)
+//            popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
+//            popupMenu.show()
+        }
     }
 
     private fun setViews() {
@@ -203,6 +198,74 @@ class LevelActivity() : AppCompatActivity(), OnClickListener, GameThread.LevelDo
         transaction.commit()
     }
 
+    private fun updateTimer(state: GameStates, resetTimer: Boolean) {
+        lastTime = if (resetTimer) 0 else lastTime
+        if (state == GameStates.STATE_OBJECTS_MOVING) {
+            val pauseString = resources.getText(R.string.pause).toString() + "($lastTime сек.)"
+            timer.cancel()
+            timeTextView.text = pauseString
+        } else timer.start()
+    }
+
+    private fun recheckButtons(buttons: MutableList<Button>, i: Int) {
+        buttons.forEach {
+            it.background = defaultBackgroundDrawable
+        }
+        if (i in buttons.indices)
+            buttons[i].background = clickedBackgroundDrawable
+    }
+
+    private fun getButtonsLinearLayout(count: Int, names: List<String>): LinearLayout {
+
+        val buttonsPaneLinearLayout = LinearLayout(this)
+
+        val buttonsPanelParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        )
+
+        buttonsPaneLinearLayout.layoutParams = buttonsPanelParams
+        buttonsPaneLinearLayout.orientation = LinearLayout.HORIZONTAL
+
+        val params = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        params.weight = 1F
+
+        clickedBackgroundDrawable = ResourcesCompat.getDrawable(
+            resources,
+            androidx.appcompat.R.color.material_blue_grey_800, theme
+        )!!
+
+        for (i in 0 until count) {
+            val b = Button(applicationContext).apply {
+                background = ResourcesCompat.getDrawable(resources, R.drawable.button_style, theme)
+                defaultBackgroundDrawable = background
+                id = i
+                text = names[i]
+                layoutParams = params
+                setOnClickListener {
+                    val pickedOption = when (i) {
+                        0 -> PickedOptions.PEG
+                        1 -> PickedOptions.ROPE
+                        2 -> PickedOptions.GOAT
+                        3 -> PickedOptions.DOG
+                        else -> PickedOptions.CLEAR
+                    }
+                    recheckButtons(buttons, i)
+                    Log.d("MyTag", pickedOption.toString())
+                    appConstants.changeOption(pickedOption)
+                }
+                buttonsPaneLinearLayout.addView(this)
+            }
+
+            buttons.add(b)
+        }
+
+        return buttonsPaneLinearLayout
+    }
+
     override fun onClick(view: View?) {
         when (view?.id) {
             R.id.backImgButton -> {
@@ -217,7 +280,7 @@ class LevelActivity() : AppCompatActivity(), OnClickListener, GameThread.LevelDo
             R.id.levelConditionImgButton -> {
                 createDialog(
                     "Условие уровня",
-                    "Нарисуйте $levelCondition",
+                    "${translatedMap[levelCondition]}",
                     "Круто!",
                     "Не круто :("
                 )
@@ -245,67 +308,4 @@ class LevelActivity() : AppCompatActivity(), OnClickListener, GameThread.LevelDo
             else -> return
         }
     }
-
-    private fun updateTimer(state: GameStates, resetTimer: Boolean) {
-        lastTime = if (resetTimer) 0 else lastTime
-        if (state == GameStates.STATE_OBJECTS_MOVING) {
-            timer.cancel()
-//            timeTextView.text = "" //resources.getText(R.string.pause)
-        } else timer.start()
-    }
-
-    private fun recheckButtons(buttons: MutableList<Button>, i: Int) {
-        buttons.forEach {
-            it.background = defaultBackgroundDrawable
-        }
-        if (i in buttons.indices)
-            buttons[i - 1].background = clickedBackgroundDrawable
-    }
-
-    private fun getButtonsLinearLayout(count: Int, names: List<String>): LinearLayout {
-
-        val buttonsPaneLinearLayout = LinearLayout(this)
-
-        val buttonsPanelParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.MATCH_PARENT
-        )
-        buttonsPaneLinearLayout.layoutParams = buttonsPanelParams
-        buttonsPaneLinearLayout.orientation = LinearLayout.HORIZONTAL
-        val params = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        params.weight = 1F
-
-        clickedBackgroundDrawable = ResourcesCompat.getDrawable(
-            resources,
-            androidx.appcompat.R.color.material_blue_grey_800, theme
-        )!!
-
-        for (i in 1..count) {
-            val b = Button(applicationContext).apply {
-                background = ResourcesCompat.getDrawable(resources, R.drawable.button_style, theme)
-                defaultBackgroundDrawable = background
-                id = i
-                text = names[i - 1]
-                layoutParams = params
-                setOnClickListener {
-                    val pickedOption = when (i) {
-                        1 -> PickedOptions.PEG
-                        2 -> PickedOptions.ROPE
-                        3 -> PickedOptions.GOAT
-                        4 -> PickedOptions.WOLF
-                        else -> PickedOptions.CLEAR
-                    }
-                    recheckButtons(buttons, i)
-                    appConstants.changeOption(pickedOption)
-                }
-                buttonsPaneLinearLayout.addView(this)
-            }
-            buttons.add(b)
-        }
-        return buttonsPaneLinearLayout
-    }
-
 }

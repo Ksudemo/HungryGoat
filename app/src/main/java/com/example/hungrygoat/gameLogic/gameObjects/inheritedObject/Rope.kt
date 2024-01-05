@@ -24,8 +24,8 @@ class Rope(
     private val maxLength = ropeLength
 
     private val isObjsMovable =
-        objectFrom.gameObjectTag == GameObjectTags.WOLF || objectFrom.gameObjectTag == GameObjectTags.GOAT
-                || objectTo.gameObjectTag == GameObjectTags.WOLF || objectTo.gameObjectTag == GameObjectTags.GOAT
+        objectFrom.gameObjectTag == GameObjectTags.DOG || objectFrom.gameObjectTag == GameObjectTags.GOAT
+                || objectTo.gameObjectTag == GameObjectTags.DOG || objectTo.gameObjectTag == GameObjectTags.GOAT
 
     override fun draw(canvas: Canvas, paint: Paint) {
         paint.color = color
