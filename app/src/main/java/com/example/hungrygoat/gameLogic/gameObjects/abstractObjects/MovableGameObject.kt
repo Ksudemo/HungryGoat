@@ -19,12 +19,9 @@ abstract class MovableGameObject(
     private val attachedRopeActions = mutableListOf<() -> Unit>()
     private val attachedRopes = mutableListOf<Rope>()
 
-    var path = setOf<Cell>()
-    val visited = mutableListOf<Cell>() // список посещенных клеток
-    var reachedSet = setOf<Cell>()  // Множество клеток, до которых может дотянутся
+    var path = listOf<Cell>()
+    var reachedSet = listOf<Cell>()  // Множество клеток, до которых может дотянутся
     var bounds = listOf<Cell>()  // границы
-    var bounds2 = listOf<Cell>()
-
 
     var hadAvailableCells = true
 
@@ -41,8 +38,8 @@ abstract class MovableGameObject(
         attachedRopeActions.add(action)
 
     fun moveToStart() {
-        path = emptySet()
-        visited.clear()
+        path.forEach { it.visited = false }
+        path = emptyList()
         hadAvailableCells = true
 
         x = vx
@@ -51,12 +48,12 @@ abstract class MovableGameObject(
 
     fun calcReachedSet(gridHandler: GridHandler) {
         reachedSet = if (attachedRopes.isEmpty()) {
-            gridHandler.getGrid().toSet()
+            gridHandler.getGrid()
         } else {
-            var temp = attachedRopes.first().ropeReachedSet.toSet()
+            var temp = attachedRopes.first().ropeReachedSet
 
             attachedRopes.forEach { rope ->
-                temp = temp.intersect(rope.ropeReachedSet)
+                temp = temp.intersect(rope.ropeReachedSet).toList()
             }
 
             temp
@@ -71,16 +68,17 @@ abstract class MovableGameObject(
         }
 
         Log.v("MyTag", "Start setting cur movable boundarys")
-        val temp = gridHandler.getBoundaryCells(reachedSet)
+//        val temp = gridHandler.getBoundaryCells(reachedSet)
+//        Log.v("MyTag", "Boundaries done")
 
-        val centerX = temp.map { it.x }.average().toFloat()
-        val centerY = temp.map { it.y }.average().toFloat()
-        val center = Pair(centerX, centerY)
+//        val centerX = temp.map { it.x }.average().toFloat()
+//        val centerY = temp.map { it.y }.average().toFloat()
+//        val center = Pair(centerX, centerY)
+//        Log.v("MyTag", "Center counted")
 
-        bounds = removeCollinearCells(temp.sortedBy { angleBetween(center, it) })
-//        bounds2 = //removeRedundantCells(bounds)
-//            removeCollinearCells(bounds) // TODO доделать фильтр на лишние клетки + удалить bounds2 (тест онли) + удалить из рендера
-        Log.v("MyTag", "Done setting cur movable boundarys")
+        bounds = gridHandler.getBoundaryCells(reachedSet)
+        //removeCollinearCells(gridHandler.getBoundaryCells(reachedSet)) // temp.sortedBy { angleBetween(center, it) })
+        Log.v("MyTag", "Done setting cur movable boundarys ${bounds.size}")
     }
 
     private fun removeCollinearCells(points: List<Cell>): List<Cell> {
@@ -108,7 +106,6 @@ abstract class MovableGameObject(
         return res
     }
 
-
     private fun removeRedundantCells(bounds: List<Cell>): List<Cell> {
         if (bounds.size < 3) return bounds
 
@@ -134,5 +131,4 @@ abstract class MovableGameObject(
         Log.d("MyTag", "Done remove redundant cells")
         return res
     }
-
 }

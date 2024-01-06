@@ -66,11 +66,11 @@ class GameThread(
                 }
 
                 GameStates.STATE_CHECK_SOLUTION -> {
-                    if (solutionNotChecked)
-                        if (engine.checkSolution(levelCondition)) {
+                    if (solutionNotChecked) {
+                        if (engine.checkSolution(levelCondition))
                             triggerEvent()
-                            solutionNotChecked = false
-                        }
+                        solutionNotChecked = false
+                    }
                 }
 
                 else -> {

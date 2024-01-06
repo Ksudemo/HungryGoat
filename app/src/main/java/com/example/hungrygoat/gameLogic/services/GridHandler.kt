@@ -15,11 +15,12 @@ import kotlin.properties.Delegates
 @Suppress("unused")
 class GridHandler {
 
-    private lateinit var grid: List<Cell>
+    private lateinit var grid: List<Cell> // TODO Change grid2 to grid
+    private lateinit var grid2: Array<Array<Cell>>
 
     private var distances = mutableMapOf<GameObject, MutableMap<GameObject, Float>>()
-    private var neighbors = mutableMapOf<Cell, List<Cell>>()
-    private var neighbors2 = mutableMapOf<Int, List<Int>>()
+
+    private var neighbors = mutableMapOf<Int, List<Int>>()
     private var cellToObjects = mutableMapOf<GameObject, Cell>()
 
     var cellSize by Delegates.notNull<Float>()
@@ -48,33 +49,45 @@ class GridHandler {
         numRows = ceil(height / cellSize).toInt()
         numColumns = ceil(width / cellSize).toInt()
 
-        val temp = mutableListOf<Cell>()
+//        val temp = mutableListOf<Cell>()
+//        var atLeastOneCellRemovedFromBottom = false
+//        var atLeastOneCellRemovedFromLeft = false
+//
+//
+//        for (i in 0 until numColumns)
+//            for (j in 0 until numRows) {
+//                val rect = getRect(i, j, cellSize, cellSize)
+//
+//                if (rect.bottom > height) {
+//                    atLeastOneCellRemovedFromBottom = true
+//                    continue
+//                }
+//
+//                if (rect.left > width) {
+//                    atLeastOneCellRemovedFromLeft = true
+//                    continue
+//                }
+//
+//                temp.add(Cell(rect, rect.centerX(), rect.centerY()))
+//            }
+//        if (atLeastOneCellRemovedFromBottom)
+//            numRows -= 1
+//        if (atLeastOneCellRemovedFromLeft)
+//            numColumns -= 1
 
-        var atLeastOneCellRemovedFromBottom = false
-        var atLeastOneCellRemovedFromLeft = false
-
-        for (i in 0 until numColumns)
-            for (j in 0 until numRows) {
+        val temp = Array(numColumns) { i ->
+            Array(numRows) { j ->
                 val rect = getRect(i, j, cellSize, cellSize)
-
-                if (rect.bottom > height) {
-                    atLeastOneCellRemovedFromBottom = true
-                    continue
-                }
-
-                if (rect.left > width) {
-                    atLeastOneCellRemovedFromLeft = true
-                    continue
-                }
-
-                temp.add(Cell(rect, rect.centerX(), rect.centerY()))
+                if (rect.bottom > height || rect.left > width) null
+                else
+                    Cell(rect, rect.centerX(), rect.centerY())
             }
-        if (atLeastOneCellRemovedFromBottom)
-            numRows -= 1
-        if (atLeastOneCellRemovedFromLeft)
-            numColumns -= 1
+        }.map { row -> row.filterNotNull() }.map { it.toTypedArray() }.toTypedArray()
 
-        grid = temp
+        numColumns = temp.size
+        numRows = temp.firstOrNull()?.size ?: 0
+
+        grid = mutableListOf()// temp
         Log.v("mytag", "Cell size - $theoreticalCellSize")
         Log.v("mytag", "Grid size - ${grid.size}")
     }
@@ -138,40 +151,30 @@ class GridHandler {
         return sqrt(hypot(dx, dy))
     }
 
-    fun getBoundaryCells(availableTargets: Set<Cell>): List<Cell> =
-        availableTargets.filter { isBoundaryCell(availableTargets, it) }
+    fun getBoundaryCells(availableTargets: List<Cell>): List<Cell> =
+        if (availableTargets.size == grid.size) {
+            val res = mutableSetOf<Int>()
+            for (i in 0 until numColumns)
+                res += i * numRows
+            for (i in 0 until numColumns)
+                res += i * numRows + (numRows - 1)
+            for (i in 0 until numRows)
+                res += i
+            for (i in 0 until numRows)
+                res += (numColumns - 1) * numRows + i
 
-    private fun isBoundaryCell(bounds: Set<Cell>, cell: Cell): Boolean {
+            res.map { grid[it] }
+        } else
+            availableTargets.filter { isBoundaryCell(availableTargets, it) }
+
+    private fun isBoundaryCell(bounds: List<Cell>, cell: Cell): Boolean {
         val cellNeighbors = getCellNeighbors(cell)
-
-        if (cellNeighbors.size < 8) return true
-        cellNeighbors.forEach {
-            if (!bounds.contains(it))
-                return true
-        }
-
-        return false
+        return cellNeighbors.size < 8 || cellNeighbors.any { !bounds.contains(grid[it]) }
     }
 
-    private fun getCellN(curCell: Cell): List<Int> {
-        val curCellIndex = grid.indexOf(curCell)
-        return if (neighbors2.contains(curCellIndex)) {
-            neighbors2[curCellIndex]!!
-        } else {
-            val indexes = curCell.getNeighbors(this).map { grid.indexOf(it) }
-            neighbors2[curCellIndex] = indexes
-            indexes
-        }
-    }
-
-    private fun getCellNeighbors(cell: Cell) =
-        if (neighbors.contains(cell))
-            neighbors[cell]!!
-        else {
-            val curCellNeighbors =
-                cell.getNeighbors(this)
-            neighbors[cell] = curCellNeighbors
-            curCellNeighbors
+    private fun getCellNeighbors(curCell: Cell): List<Int> =
+        neighbors.getOrPut(grid.indexOf(curCell)) {
+            curCell.getNeighbors(this).map { grid.indexOf(it) }
         }
 
     fun freeGrid() {

@@ -69,7 +69,7 @@ class GameObjectFactory {
                 ).apply {
                     movableAction {
                         calcReachedSet(gridHandler)
-                        setBoundary(gridHandler)
+//                        setBoundary(gridHandler)
                     }
                     invokeAction()
                 }
@@ -81,7 +81,7 @@ class GameObjectFactory {
                 ).apply {
                     movableAction {
                         calcReachedSet(gridHandler)
-                        setBoundary(gridHandler)
+//                        setBoundary(gridHandler)
                     }
                     invokeAction()
                 }

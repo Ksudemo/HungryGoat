@@ -2,17 +2,14 @@ package com.example.hungrygoat.gameLogic.game
 
 import android.graphics.RectF
 import com.example.hungrygoat.gameLogic.services.GridHandler
-import kotlin.math.acos
-import kotlin.math.sqrt
 
 class Cell(val rect: RectF, val x: Float, val y: Float) {
 
+    var visited = false
     fun getNeighbors(gridHandler: GridHandler): List<Cell> {
         val result = mutableListOf<Cell>()
-
         val grid = gridHandler.getGrid()
-
-        val indexes = getNeighborsIndexes(gridHandler)
+        val indexes = getNeighborsIndexes(grid, gridHandler.numRows)
         indexes.forEach {
             result.add(grid[it])
         }
@@ -20,26 +17,22 @@ class Cell(val rect: RectF, val x: Float, val y: Float) {
         return result
     }
 
-    private fun getNeighborsIndexes(gridHandler: GridHandler): List<Int> {
+    private fun getNeighborsIndexes(grid: List<Cell>, numRows: Int): List<Int> {
         val result = mutableListOf<Int>()
 
-        val grid = gridHandler.getGrid()
+        val curIndex = grid.indexOf(this)
+        val leftIndex = curIndex - numRows
+        val rightIndex = curIndex + numRows
+        val topIndex = curIndex - 1
+        val bottomIndex = curIndex + 1
 
-        val index = grid.indexOf(this)
-        val numRows = gridHandler.numRows
-
-        val leftIndex = index - numRows
-        val rightIndex = index + numRows
-        val topIndex = index - 1
-        val bottomIndex = index + 1
-
-        val bottomLeft = index + 1 - numRows
-        val bottomRight = index + 1 + numRows
-        val topLeft = index - 1 - numRows
-        val topRight = index - 1 + numRows
+        val bottomLeft = curIndex + 1 - numRows
+        val bottomRight = curIndex + 1 + numRows
+        val topLeft = curIndex - 1 - numRows
+        val topRight = curIndex - 1 + numRows
 
         val bottomExtraCond = bottomIndex % numRows != 0
-        val topExtraCond = index % numRows != 0
+        val topExtraCond = curIndex % numRows != 0
 
         if (leftIndex in grid.indices) result.add(leftIndex)
         if (rightIndex in grid.indices) result.add(rightIndex)
@@ -53,13 +46,5 @@ class Cell(val rect: RectF, val x: Float, val y: Float) {
         if (topExtraCond && topRight in grid.indices) result.add(topRight)
 
         return result
-    }
-
-    fun angleBetween(other: Cell): Double {
-        val dotProduct = this.x * other.x + this.y * other.y
-        val magP1 = sqrt(this.x * this.x + this.y * this.y)
-        val magP2 = sqrt(other.x * other.x + other.y * other.y)
-
-        return Math.toDegrees(acos(dotProduct / (magP1 * magP2).toDouble()))
     }
 }

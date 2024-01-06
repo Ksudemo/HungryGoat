@@ -68,7 +68,6 @@ class GameEngine {
             solutionService.checkSolution(
                 goat!!, dog,
                 gridHandler.cellSize,
-                gridHandler.getBoundaryCells(gridHandler.getGrid().toSet()),
                 levelCondition
             )
 
@@ -90,7 +89,7 @@ class GameEngine {
             gridHandler.cellSize, gridHandler.numRows, gridHandler.numColumns,
             ropes,
             ruler,
-            goat?.visited,
+            goat?.path,
             SingletonAppConstantsInfo.appConstants.getSetttings()
         )
 

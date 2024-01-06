@@ -35,7 +35,7 @@ class RenderService {
         cellSize: Float, numRows: Int, numCols: Int,
         ropes: MutableList<Rope>,
         ruller: MutableList<List<Any>>,
-        goatVisited: MutableList<Cell>?,
+        goatPath: List<Cell>?,
         settings: GameSettings,
     ) {
         try {
@@ -47,7 +47,7 @@ class RenderService {
             if (settings.drawDogBounds)
                 drawDogBounds(canvas, objects)
 
-            goatVisited?.forEach {
+            goatPath?.filter { it.visited }?.forEach {
                 drawCell(canvas, rectPaint.apply {
                     color = goatVisitedColor
                     style = Paint.Style.FILL_AND_STROKE
@@ -208,15 +208,15 @@ class RenderService {
                 grid[i]
             )
 
-//            canvas.drawText(
-//                "$i",
-//                grid[i].x,
-//                grid[i].y,
-//                paint.apply {
-//                    color = Color.BLACK
-//                    textSize = 80f
-//                    style = Paint.Style.STROKE
-//                })
+            canvas.drawText(
+                "$i",
+                grid[i].x,
+                grid[i].y,
+                paint.apply {
+                    color = Color.BLACK
+                    textSize = 80f
+                    style = Paint.Style.STROKE
+                })
         }
     }
 

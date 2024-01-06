@@ -3,6 +3,7 @@ package com.example.hungrygoat.gameLogic.gameObjects.inheritedObject
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.util.Log
 import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.gameLogic.game.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.MovableGameObject
@@ -30,27 +31,25 @@ class Dog(x: Float, y: Float, tag: GameObjectTags) :
     }
 
     private fun getNextCellToMove(gridHandler: GridHandler): Cell? {
-        val availableCells = bounds - visited.toSet()
-
-        gridHandler.getObjectCell(this)
-
-        return availableCells.minByOrNull {
-            gridHandler.distBetween(
-                this,
-                it.x,
-                it.y
-            )
-        }
+        if (path.isEmpty())
+            path = bounds.sortedBy {
+                gridHandler.distBetween(
+                    this,
+                    it.x,
+                    it.y
+                )
+            }
+        Log.d("mytag", "dog path size - ${path.size}, visited - ${path.count { it.visited }}")
+        return path.filter { !it.visited }.minByOrNull { gridHandler.distBetween(this, it.x, it.y) }
     }
 
     override fun move(cellToMove: Cell?) {
         if (cellToMove == null) return
         x = cellToMove.x
         y = cellToMove.y
+        cellToMove.visited = true
 
-        visited.add(cellToMove)
-
-        if (visited.size == bounds.size)
-            visited.clear()
+        if (!path.any { !it.visited })
+            path.forEach { it.visited = false }
     }
 }

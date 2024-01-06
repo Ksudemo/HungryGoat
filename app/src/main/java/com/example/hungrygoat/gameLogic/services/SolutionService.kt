@@ -2,7 +2,6 @@ package com.example.hungrygoat.gameLogic.services
 
 import android.util.Log
 import com.example.hungrygoat.constants.LevelConditions
-import com.example.hungrygoat.gameLogic.game.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Dog
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
 import kotlin.math.abs
@@ -15,56 +14,56 @@ class SolutionService {
         goat: Goat,
         dog: Dog?,
         cellSize: Float,
-        grid: List<Cell>,
         targetShape: LevelConditions,
-    ): Boolean {
-
-        val cx = goat.bounds.map { it.x }.average().toFloat()
-        val cy = goat.bounds.map { it.y }.average().toFloat()
-        val r = goat.bounds.map { sqrt((it.x - cx).pow(2) + (it.y - cy).pow(2)) }.average()
-            .toFloat() + cellSize / 2
-
-        val boundsWithoutGridEdges = mutableListOf<Cell>()
-        boundsWithoutGridEdges.addAll(goat.bounds)
-
-        boundsWithoutGridEdges.removeIf { grid.contains(it) }
-
-        val testCircle = isCircle(goat, cx, cy, r)
-        val testHalfCircle = isHalfCircle(goat, cx, cy, r)
-        val testRing = isRing(goat, cellSize, cx, cy, r)
-        val testRect = isRect(goat)
+    ) =
+        try {
 
 
-        Log.d("MyTag", "current shape is circle - $testCircle")
-        Log.d("MyTag", "current shape is halfCircle - $testHalfCircle")
+            val cx = goat.bounds.map { it.x }.average().toFloat()
+            val cy = goat.bounds.map { it.y }.average().toFloat()
+            val r = goat.bounds.map { sqrt((it.x - cx).pow(2) + (it.y - cy).pow(2)) }.average()
+                .toFloat() + cellSize / 2
 
-        Log.d("MyTag", "current shape is ring - $testRing")
+            val testCircle = isCircle(goat, cx, cy, r)
+            val testHalfCircle = isHalfCircle(goat, cx, cy, r)
+            val testRing = isRing(goat, cellSize, cx, cy, r)
+//        val testRect = isRect(goat)
 
-        val sol = when (targetShape) {
-            LevelConditions.CIRCLE -> isCircle(goat, cx, cy, r)
-            LevelConditions.HALFCIRCLE -> true// isHalfCircle(goat, cellSize)
+            Log.d(
+                "MyTag",
+                "Current shape is:\n " +
+                        "Circle - $testCircle\n " +
+                        "Ring - $testRing\n " +
+                        "HalfCircle - $testHalfCircle\n " + ""
+//                    "Reactangle - $testRect "
+            )
 
-            LevelConditions.RING -> isRing(goat, cellSize, cx, cy, r)
-            LevelConditions.HALFRING -> true
+            when (targetShape) {
+                LevelConditions.CIRCLE -> isCircle(goat, cx, cy, r)
+                LevelConditions.HALFCIRCLE -> true// isHalfCircle(goat, cellSize)
 
-            LevelConditions.MOON -> true
+                LevelConditions.RING -> isRing(goat, cellSize, cx, cy, r)
+                LevelConditions.HALFRING -> true
 
-            LevelConditions.SQUARE -> true
-            LevelConditions.TRIANGLE -> true
+                LevelConditions.MOON -> true
 
-            LevelConditions.LEAF -> true
-            LevelConditions.HEXAGON -> true
+                LevelConditions.SQUARE -> true
+                LevelConditions.TRIANGLE -> true
 
-            LevelConditions.ARROW -> true
+                LevelConditions.LEAF -> true
+                LevelConditions.HEXAGON -> true
 
-            LevelConditions.RAINDROP -> true
+                LevelConditions.ARROW -> true
 
-            else -> true
+                LevelConditions.RAINDROP -> true
+
+                else -> true
+            }
+
+        } catch (e: Exception) {
+            false
         }
 
-
-        return sol
-    }
 
     private fun isCircle(goat: Goat, cx: Float, cy: Float, r: Float): Boolean {
         return goat.bounds.all { boundCell ->
@@ -95,7 +94,7 @@ class SolutionService {
     ): Boolean {
         val isCircle = isCircle(goat, cx, cy, r)
         if (isCircle)
-            return sqrt(goat.visited.minOf { visitedCell ->
+            return sqrt(goat.path.minOf { visitedCell ->
                 val dx = abs(visitedCell.x - cx)
                 val dy = abs(visitedCell.y - cy)
 
@@ -106,13 +105,21 @@ class SolutionService {
     }
 
     private fun isRect(goat: Goat): Boolean {
-        for (i in 0 until goat.bounds.size - 2) {
-            val p1 = goat.bounds[i]
-            val p2 = goat.bounds[i + 1]
-            val angle = p1.angleBetween(p2)
-            Log.d("MyTag", "angle = $angle")
-        }
-
+//        val rect = goat.visited.first().rect
+//
+//        val minX = goat.bounds.minOfOrNull { it.x } ?: 0f
+//        val minY = goat.bounds.minOfOrNull { it.y } ?: 0f
+//        val maxX = goat.bounds.maxOfOrNull { it.x } ?: 0f
+//        val maxY = goat.bounds.maxOfOrNull { it.y } ?: 0f
+//
+//        val pointA = goat.bounds.find { it.x == maxX && it.y == maxY } ?: return false
+//        val pointB = goat.bounds.find { it.x == maxX && it.y == minY } ?: return false
+//        val pointC = goat.bounds.find { it.x == minX && it.y == minY } ?: return false
+//        val pointD = goat.bounds.find { it.x == minX && it.y == maxY } ?: return false
+//
+//        Log.d("MyTag", "Points found")
+//        // Проверяем, что параметры прямоугольника равны
+//        return rect.left == minX && rect.top == minY && rect.right == maxX && rect.bottom == maxY
         return true
     }
 }

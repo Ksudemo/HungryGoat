@@ -22,28 +22,23 @@ class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
 
     override fun update(gridHandler: GridHandler, dogObj: Dog?): Boolean =
         if (hadAvailableCells) {
-            val cellToMove = getNextCellToMove(gridHandler, dogObj)
-            move(cellToMove)
-            visited.addAll(path)
-            hadAvailableCells = false
+            repeat(2) { // TODO repeat 1/2 ?
+                val cellToMove = getNextCellToMove(gridHandler, dogObj)
+                move(cellToMove)
+            }
+//            path.forEach { it.visited = true }
+//            hadAvailableCells = false
             true
         } else
             false
 
     private fun getNextCellToMove(gridHandler: GridHandler, dogObj: Dog?): Cell? {
-        if (path.isNotEmpty())
-            return (path - visited.toSet()).firstOrNull()
-
-        val dogReachedSet = dogObj?.reachedSet ?: emptySet()
-        val availableCells = reachedSet - (dogReachedSet + visited)
-
-        gridHandler.getObjectCell(this)
-
-        path = availableCells.sortedBy { gridHandler.distBetween(this, it.x, it.y) }.toSet()
-
-        val cellToMove = path.firstOrNull()
-        hadAvailableCells = cellToMove != null
-        return cellToMove
+        if (path.isEmpty()) {
+            val dogReachedSet = dogObj?.reachedSet ?: emptySet()
+            path = if (reachedSet.isEmpty()) gridHandler.getGrid() - dogReachedSet.toSet() else
+                (reachedSet - dogReachedSet.toSet())
+        }
+        return path.filter { !it.visited }.minByOrNull { gridHandler.distBetween(this, it.x, it.y) }
     }
 
     override fun move(cellToMove: Cell?) {
@@ -51,10 +46,8 @@ class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
             hadAvailableCells = false
             return
         }
-
+        cellToMove.visited = true
         x = cellToMove.x
         y = cellToMove.y
-
-        visited.add(cellToMove)
     }
 }

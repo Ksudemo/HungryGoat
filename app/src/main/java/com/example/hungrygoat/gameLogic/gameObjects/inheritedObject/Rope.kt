@@ -32,19 +32,6 @@ class Rope(
         canvas.drawLine(objectFrom.x, objectFrom.y, objectTo.x, objectTo.y, paint)
     }
 
-//    fun setReachedSet(gridHandler: GridHandler) = coroutineScope {
-//        if (!isTiedToRope && !(isObjsMovable)) return@coroutineScope
-//
-//        val baseRope = getRopeConnectedTo()
-//
-//        ropeReachedSetDeferred = async(Dispatchers.Default) {
-//            gridHandler.getGrid().filter { cell ->
-//                val canReach = canRopeReachCell(gridHandler, baseRope, cell)
-//                canReach
-//            }
-//        }
-//    }
-
     fun setReachedSet(gridHandler: GridHandler) {
         if (!isTiedToRope && !(isObjsMovable)) return
 
