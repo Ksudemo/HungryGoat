@@ -17,12 +17,10 @@ class GameThread(
 
     private var engineInitialized = false
     private var isRunning: Boolean = true
-    private val delay: Long = 2
 
     private var solutionNotChecked = true
 
-
-    interface LevelDoneListener {
+    fun interface LevelDoneListener {
         fun onLevelDoneEvent()
     }
 
@@ -45,7 +43,7 @@ class GameThread(
         while (isRunning) {
             val appC = SingletonAppConstantsInfo.getAppConst()
 
-            val canvas = surfaceHolder.lockCanvas(null)
+            val canvas = surfaceHolder.lockCanvas(null) ?: return
 
             val engine = appC.getEngine()
             if (!engineInitialized || appC.orientationChanged) {
@@ -91,12 +89,6 @@ class GameThread(
             }
 
             surfaceHolder.unlockCanvasAndPost(canvas)
-
-            try {
-                sleep(delay)
-            } catch (ex: InterruptedException) {
-//                Make log
-            }
         }
     }
 

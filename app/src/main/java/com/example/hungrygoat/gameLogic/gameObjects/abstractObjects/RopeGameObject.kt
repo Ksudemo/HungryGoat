@@ -9,6 +9,6 @@ abstract class RopeGameObject(
     tg: GameObjectTags,
 ) :
     GameObject(objectFrom.x, objectFrom.y, tg) {
-    lateinit var ropeReachedSet: List<Cell>
-    val ropePath = mutableListOf<RopeNode>()
+    var ropeReachedSet: HashSet<Cell> = hashSetOf()
+    val ropePath = HashSet<RopeNode>()
 }

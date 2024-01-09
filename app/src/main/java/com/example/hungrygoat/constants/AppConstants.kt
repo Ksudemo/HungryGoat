@@ -24,7 +24,7 @@ val translatedMap = mapOf(
     LevelConditions.RING to "Кольцо",
     LevelConditions.HALFRING to "Полукольцо",
     LevelConditions.MOON to "Месяц",
-    LevelConditions.SQUARE to "Квадрат",
+    LevelConditions.RECTANGLE to "Прямоугольник",
     LevelConditions.TRIANGLE to "Треугольник",
     LevelConditions.LEAF to "(Лист) Пересечение кругов",
     LevelConditions.HEXAGON to "Шестиугольник",
@@ -100,6 +100,4 @@ class AppConstants {
             engine.resetTempObj()
         currentOption = option
     }
-
-
 }

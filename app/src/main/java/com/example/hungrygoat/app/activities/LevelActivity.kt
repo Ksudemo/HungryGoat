@@ -60,6 +60,8 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
         setContentView(R.layout.level_layout)
 
         val extras = intent.extras
+
+        @Suppress("DEPRECATION")
         levelCondition =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 extras?.getSerializable("levelCondition", LevelConditions::class.java)
@@ -108,11 +110,12 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
 
     override fun onStop() {
         super.onStop()
-
         gameThread.unregisterEventListener(this)
+        gameThread.stopThread()
         appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
         appConstants.getEngine().killEngine()
     }
+
 
     override fun onLevelDoneEvent() {
         Log.d("MyTag", "Level done!")
@@ -122,13 +125,8 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
                 "Вы прошли уровень за $lastTime сек.",
                 Toast.LENGTH_SHORT
             ).show()
-            /*
-               TODO
-                Добавить меню с горизонтальными кнопками:
-                 "Повторить уровень" "Следующий уровень"
-                 И текстом отображающем текущее время в центре
-                 Если повторить, то сбросить таймер в ноль, а если следующий, то выбрать следущее условие и сбросить таймер в ноль
-             */
+            //               TODO Добавить меню с горизонтальными кнопками: "Повторить уровень" "Следующий уровень"  И текстом отображающем текущее время в центре. Если повторить, то сбросить таймер в ноль, а если следующий, то выбрать следущее условие и сбросить таймер в ноль
+
 //            val popupMenu = PopupMenu(applicationContext, gameView)
 //            popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
 //            popupMenu.show()

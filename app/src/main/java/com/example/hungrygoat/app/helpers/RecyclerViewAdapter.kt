@@ -7,24 +7,22 @@ import android.widget.Button
 import android.widget.CheckBox
 import androidx.recyclerview.widget.RecyclerView
 import com.example.hungrygoat.R
+import com.example.hungrygoat.app.helpers.RecyclerViewAdapter.OnItemClickListener
 
-@Suppress("ClassName")
 class RecyclerViewAdapter(private val levels: List<Pair<String, Boolean>>) :
     RecyclerView.Adapter<RecyclerViewAdapter.MyViewHolder>() {
 
-    private var clickListener: onItemClickListener = object : onItemClickListener {}
+    private var clickListener: OnItemClickListener = OnItemClickListener { }
 
-    interface onItemClickListener {
-        fun onItemClick(position: Int) {
-
-        }
+    fun interface OnItemClickListener {
+        fun onItemClick(position: Int)
     }
 
-    fun setOnItemClickListener(listener: onItemClickListener) {
+    fun setOnItemClickListener(listener: OnItemClickListener) {
         clickListener = listener
     }
 
-    class MyViewHolder(itemView: View, listener: onItemClickListener) :
+    class MyViewHolder(itemView: View, listener: OnItemClickListener) :
         RecyclerView.ViewHolder(itemView) {
         val levelDoneCheckBox: CheckBox = itemView.findViewById(R.id.levelDoneCheckBox)
         val playLevelButton: Button = itemView.findViewById(R.id.playLevelButton)

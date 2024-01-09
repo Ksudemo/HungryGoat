@@ -74,9 +74,6 @@ class SettingsActivity : AppCompatActivity(), OnClickListener {
             "1.0f - если че -то умрет, то ой (:"
         )
 
-        val rederTypeList = listOf("Выберите элемент", "Квадраты", "Круги")
-
-
         pickCellSizeSpinner = findViewById(R.id.pickCellSizeSpinner)
 
         val cellSizeAdapter = CustomAdapter(
@@ -135,7 +132,9 @@ class SettingsActivity : AppCompatActivity(), OnClickListener {
                 )
             }
 
-            else -> {}
+            else -> {
+                return
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.hungrygoat.gameLogic.game
 
 import android.graphics.Canvas
+import android.util.Log
 import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.constants.GameStates
 import com.example.hungrygoat.constants.LevelConditions
@@ -9,7 +10,6 @@ import com.example.hungrygoat.constants.SingletonAppConstantsInfo
 import com.example.hungrygoat.gameLogic.gameObjects.GameObjectFactory
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Dog
-import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.EmptyObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
 import com.example.hungrygoat.gameLogic.services.GridHandler
@@ -40,11 +40,11 @@ class GameEngine {
 
         fun getObjects() = objects
         fun getRopes() = ropes
-
     }
 
-    fun setGrid(w: Int, h: Int, cellSize: Float) =
+    fun setGrid(w: Int, h: Int, cellSize: Float) {
         gridHandler.setGrid(w, h, cellSize)
+    }
 
     fun clearObjects() {
         objects.clear()
@@ -61,20 +61,16 @@ class GameEngine {
         objects.find { it.isTempOnRopeSet }?.isTempOnRopeSet = false
     }
 
-    fun checkSolution(levelCondition: LevelConditions) =
-        if (goat == null || goat?.bounds?.isEmpty() == true)
-            false
-        else
-            solutionService.checkSolution(
-                goat!!, dog,
-                gridHandler.cellSize,
-                levelCondition
-            )
+    fun checkSolution(levelCondition: LevelConditions): Boolean =
+        when {
+            goat == null || goat?.bounds?.isEmpty() == true -> false
+            else ->
+                solutionService.checkSolution(goat!!, gridHandler, levelCondition)
+        }
 
     fun update() {
         if (goat != null) {
             val updateSuccess = goat?.update(gridHandler, dog)
-
             val appC = SingletonAppConstantsInfo.getAppConst()
             if (updateSuccess == false && appC.getState() != GameStates.STATE_CHECK_SOLUTION)
                 appC.changeState(GameStates.STATE_CHECK_SOLUTION)
@@ -85,72 +81,45 @@ class GameEngine {
     fun draw(canvas: Canvas) =
         renderService.render(
             canvas,
-            gridHandler.getGrid(), objects, tempWhileMove,
-            gridHandler.cellSize, gridHandler.numRows, gridHandler.numColumns,
+            gridHandler,
+            objects,
             ropes,
+            tempWhileMove,
             ruler,
-            goat?.path,
             SingletonAppConstantsInfo.appConstants.getSetttings()
         )
 
     fun createNewObject(x: Float, y: Float, pickedOption: PickedOptions) {
-        val currentState = SingletonAppConstantsInfo.getAppConst().getState()
-
-        if (currentState == GameStates.STATE_PLAYER_PLACE_OBJECTS) {
-
-            if (tempWhileMove != null) {
-                handleCreatedObject(tempWhileMove!!)
-                tempWhileMove = null
-                ruler.clear()
-                return
-            }
-
+        if (SingletonAppConstantsInfo.getAppConst()
+                .getState() == GameStates.STATE_PLAYER_PLACE_OBJECTS
+        ) {
             val createdObject =
                 gameObjectFactory.createNewObject(
                     x, y, objects.find { it.isTempOnRopeSet }, pickedOption, gridHandler
                 )
-
+            tempWhileMove = null
+            ruler.clear()
             handleCreatedObject(createdObject ?: return)
         }
     }
 
     fun tempCreateNewObjectOnMove(x: Float, y: Float, pickedOption: PickedOptions) {
-        fun isInRange(angle: Double, targetAngle: Double, eps: Double): Boolean {
-            val remainder = (angle - targetAngle) % 360.0
-            return remainder <= eps || (360.0 - remainder) <= eps
-        }
-
-        fun isValidAngle(angle: Double, eps: Double) =
-            isInRange(angle, 30.0, eps) || isInRange(angle, 45.0, eps)
-
         if (SingletonAppConstantsInfo.getAppConst().getState()
             != GameStates.STATE_PLAYER_PLACE_OBJECTS
         ) return
+
         ruler.clear()
 
         if (tempWhileMove != null && tempWhileMove?.gameObjectTag.toString() == pickedOption.toString()) {
-            val closestToTemp = gridHandler.getClosestObject(tempWhileMove!!, objects)
-
-            val testPoint = EmptyObject(x, y, GameObjectTags.EMPTY)
-
-//            var angle = physicService.calcAngleBetweenInDeg(
-//                testPoint, closestToTemp
-//            )
-
-//            if (isValidAngle(angle, eps = 0.0) || closestToTemp == null) {
             tempWhileMove?.x = x
             tempWhileMove?.y = y
-//            }
 
             objects.forEach {
                 val angle = physicService.calcAngleBetweenInDeg(
                     it, tempWhileMove!!
                 )
-//                val isValid = isValidAngle(angle, eps = 5.0)
-//                if (isValid)
                 ruler.add(listOf(tempWhileMove!!, it, angle))
             }
-
         } else
             tempWhileMove =
                 gameObjectFactory.createNewObject(
@@ -170,6 +139,11 @@ class GameEngine {
         val isDog = isObjADog(rope.objectTo, rope.objectFrom)
         val isGoat = isObjAGoat(rope.objectTo, rope.objectFrom)
 
+
+        val objFrom = rope.objectFrom
+        val objTo = rope.objectTo
+        if (ropes.any { it.objectTo == objTo || it.objectTo == objFrom || it.objectFrom == objTo || it.objectFrom == objFrom }) return
+
         if (isDog)
             dog?.attachRope(rope)
         else if (isGoat)
@@ -185,10 +159,13 @@ class GameEngine {
         if ((isDog || isGoat) && !obj.isTempOnRopeSet) {
             removeFromObjects(obj)
 
-            if (isGoat)
-                goat = obj as Goat
-            else
-                dog = obj as Dog
+            when {
+                isGoat -> goat = obj as Goat
+                else -> {
+                    dog = obj as Dog
+                    goat?.moveToStart()
+                }
+            }
         }
 
         objects.add(obj)
@@ -219,8 +196,12 @@ class GameEngine {
 
 
     fun killEngine() {
+        Log.d(
+            "mytag",
+            "getDistance calls:\n ${gridHandler.testMap}\n"
+        )
+        gridHandler.testMap.clear()
 //        clearObjects()
 //        gridHandler.freeGrid()
     }
-
 }

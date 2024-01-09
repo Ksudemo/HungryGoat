@@ -7,8 +7,8 @@ import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
 import com.example.hungrygoat.gameLogic.services.GridHandler
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.system.measureTimeMillis
 
-@Suppress("ConvertArgumentToSet")
 abstract class MovableGameObject(
     private val vx: Float,
     private val vy: Float,
@@ -19,11 +19,14 @@ abstract class MovableGameObject(
     private val attachedRopeActions = mutableListOf<() -> Unit>()
     private val attachedRopes = mutableListOf<Rope>()
 
-    var path = listOf<Cell>()
-    var reachedSet = listOf<Cell>()  // Множество клеток, до которых может дотянутся
-    var bounds = listOf<Cell>()  // границы
-
+    protected val updatePerFrame = 100
     var hadAvailableCells = true
+
+    var lastVisitedIndex = 0
+    var path = listOf<Cell>()
+
+    var reachedSet = hashSetOf<Cell>()  // Множество клеток, до которых может дотянутся
+    var bounds = listOf<Cell>()  // границы
 
     fun invokeAction() {
         attachedRopeActions.forEach { it.invoke() }
@@ -34,11 +37,12 @@ abstract class MovableGameObject(
         invokeAction()
     }
 
-    fun movableAction(action: () -> Unit) =
+    fun movableAction(action: () -> Unit) {
         attachedRopeActions.add(action)
+    }
 
     fun moveToStart() {
-        path.forEach { it.visited = false }
+        lastVisitedIndex = 0
         path = emptyList()
         hadAvailableCells = true
 
@@ -47,17 +51,14 @@ abstract class MovableGameObject(
     }
 
     fun calcReachedSet(gridHandler: GridHandler) {
-        reachedSet = if (attachedRopes.isEmpty()) {
-            gridHandler.getGrid()
-        } else {
-            var temp = attachedRopes.first().ropeReachedSet
-
-            attachedRopes.forEach { rope ->
-                temp = temp.intersect(rope.ropeReachedSet).toList()
-            }
-
-            temp
+        val time = measureTimeMillis {
+            reachedSet = if (attachedRopes.isEmpty())
+                gridHandler.getGrid().flatten().toHashSet()
+            else
+                attachedRopes.map { it.ropeReachedSet }
+                    .reduce { acc, set -> acc.intersect(set).toHashSet() }
         }
+        Log.d("mytag", "reachedSet calculated for $time ")
     }
 
     fun setBoundary(gridHandler: GridHandler) {
@@ -67,18 +68,20 @@ abstract class MovableGameObject(
             return atan2(dy, dx)
         }
 
-        Log.v("MyTag", "Start setting cur movable boundarys")
+        val time = measureTimeMillis {
 //        val temp = gridHandler.getBoundaryCells(reachedSet)
-//        Log.v("MyTag", "Boundaries done")
-
+//
 //        val centerX = temp.map { it.x }.average().toFloat()
 //        val centerY = temp.map { it.y }.average().toFloat()
 //        val center = Pair(centerX, centerY)
 //        Log.v("MyTag", "Center counted")
-
-        bounds = gridHandler.getBoundaryCells(reachedSet)
+            bounds = gridHandler.getBoundaryCells(reachedSet)
+        }
+        Log.d(
+            "mytag",
+            "bouds size = ${bounds.size}\nreached set size = ${reachedSet.size}, \n time for calc bounds = $time"
+        )
         //removeCollinearCells(gridHandler.getBoundaryCells(reachedSet)) // temp.sortedBy { angleBetween(center, it) })
-        Log.v("MyTag", "Done setting cur movable boundarys ${bounds.size}")
     }
 
     private fun removeCollinearCells(points: List<Cell>): List<Cell> {

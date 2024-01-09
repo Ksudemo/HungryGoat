@@ -21,7 +21,7 @@ class StartActivity : AppCompatActivity(), OnClickListener {
     private lateinit var settingsButton: ImageButton
     private lateinit var rulesButton: Button
 
-    lateinit var appConstants: AppConstants
+    private lateinit var appConstants: AppConstants
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

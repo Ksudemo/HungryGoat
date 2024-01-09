@@ -1,5 +1,6 @@
 package com.example.hungrygoat.gameLogic.gameObjects
 
+import android.util.Log
 import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.constants.PickedOptions
 import com.example.hungrygoat.gameLogic.game.GameEngine
@@ -48,11 +49,11 @@ class GameObjectFactory {
                         inputHandler.getClickedObject(GameEngine.getObjects(), clickedX, clickedY)
                             ?: nodes.firstOrNull()
 
-                    if (tempObj == null) {
+                    if (tempObj == null)
                         clickedGameObject?.apply {
                             isTempOnRopeSet = true
                         }
-                    } else
+                    else
                         setRope(gridHandler, tempObj, clickedGameObject, nodes)
                 }
 
@@ -69,7 +70,7 @@ class GameObjectFactory {
                 ).apply {
                     movableAction {
                         calcReachedSet(gridHandler)
-//                        setBoundary(gridHandler)
+                        setBoundary(gridHandler)
                     }
                     invokeAction()
                 }
@@ -81,7 +82,7 @@ class GameObjectFactory {
                 ).apply {
                     movableAction {
                         calcReachedSet(gridHandler)
-//                        setBoundary(gridHandler)
+                        setBoundary(gridHandler)
                     }
                     invokeAction()
                 }
@@ -90,6 +91,10 @@ class GameObjectFactory {
             }
 
         } catch (e: Exception) {
+            Log.e(
+                "mytag",
+                "Exception in GameObjectFactory.createNewObject() ${e.printStackTrace()}"
+            )
             return null
         }
     }
@@ -101,19 +106,25 @@ class GameObjectFactory {
         clickedObj: GameObject?,
         nodes: List<RopeNode>,
     ): GameObject? {
+
+        tempObj?.isTempOnRopeSet = false
+        clickedObj?.isTempOnRopeSet = false
+
         return if (tempObj == null || clickedObj == null || !physicService.canTied(
                 tempObj,
                 clickedObj
-            )
+            ) || tempObj == clickedObj
         )
             null
         else {
-            tempObj.isTempOnRopeSet = false
-            clickedObj.isTempOnRopeSet = false
-
-            val length = gridHandler.distBetween(tempObj, clickedObj)
+            val length = gridHandler.distBetween(
+                tempObj.x,
+                tempObj.y,
+                clickedObj.x,
+                clickedObj.y,
+                "GameObjectFactory"
+            )
             val isTiedToRope = nodes.isNotEmpty()
-
             val rope = Rope(tempObj, clickedObj, isTiedToRope, length, GameObjectTags.ROPE).apply {
                 setRopeNodes()
                 setReachedSet(gridHandler)

@@ -16,7 +16,7 @@ class LevelSelectionActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var toolbar: Toolbar
 
-    lateinit var appConstants: AppConstants
+    private lateinit var appConstants: AppConstants
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.level_selection_layout)
@@ -27,37 +27,35 @@ class LevelSelectionActivity : AppCompatActivity() {
         appConstants = SingletonAppConstantsInfo.getAppConst()
 
         val adapter = RecyclerViewAdapter(appConstants.translatedList)
-        adapter.setOnItemClickListener(object : RecyclerViewAdapter.onItemClickListener {
-            override fun onItemClick(position: Int) {
-                val levelCondition = appConstants.levelsList[position].first
+        adapter.setOnItemClickListener { position ->
+            val levelCondition = appConstants.levelsList[position].first
 
-                val extras = Bundle()
+            val extras = Bundle()
 
-                extras.putSerializable("levelCondition", levelCondition)
-                extras.putSerializable("caller", LevelSelectionActivity::class.java)
+            extras.putSerializable("levelCondition", levelCondition)
+            extras.putSerializable("caller", LevelSelectionActivity::class.java)
 
-                val intent = Intent(applicationContext, LevelActivity::class.java).apply {
-                    putExtras(extras)
-                }
-
-                val lastLevelPlayedSharedPrefsStr =
-                    resources.getString(R.string.sharedPrefsSettingsName)
-                val lastLevelPlayedStr = resources.getString(R.string.lastLevelPlayed)
-
-                val lastLevelSharedPref =
-                    applicationContext.getSharedPreferences(
-                        lastLevelPlayedSharedPrefsStr,
-                        Context.MODE_PRIVATE
-                    )
-
-                lastLevelSharedPref.edit().apply {
-                    putInt(lastLevelPlayedStr, position)
-                    apply()
-                }
-
-                startActivity(intent)
+            val intent = Intent(applicationContext, LevelActivity::class.java).apply {
+                putExtras(extras)
             }
-        })
+
+            val lastLevelPlayedSharedPrefsStr =
+                resources.getString(R.string.sharedPrefsSettingsName)
+            val lastLevelPlayedStr = resources.getString(R.string.lastLevelPlayed)
+
+            val lastLevelSharedPref =
+                applicationContext.getSharedPreferences(
+                    lastLevelPlayedSharedPrefsStr,
+                    Context.MODE_PRIVATE
+                )
+
+            lastLevelSharedPref.edit().apply {
+                putInt(lastLevelPlayedStr, position)
+                apply()
+            }
+
+            startActivity(intent)
+        }
 
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)

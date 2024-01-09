@@ -30,53 +30,42 @@ class RenderService {
 
     fun render(
         canvas: Canvas,
-        grid: List<Cell>,
-        objects: MutableList<GameObject>, tempObject: GameObject?,
-        cellSize: Float, numRows: Int, numCols: Int,
-        ropes: MutableList<Rope>,
-        ruller: MutableList<List<Any>>,
-        goatPath: List<Cell>?,
+        gridHandler: GridHandler,
+        objects: List<GameObject>,
+        ropes: List<Rope>,
+        tempWhileMove: GameObject?,
+        ruller: List<List<Any>>,
         settings: GameSettings,
     ) {
         try {
             drawBackground(canvas)
 
+            val dog = objects.find { it.gameObjectTag == GameObjectTags.DOG } as Dog?
+            val goat = objects.find { it.gameObjectTag == GameObjectTags.GOAT } as Goat?
+
             if (settings.drawCellIndex)
-                drawCellIndex(grid, canvas)
+                drawCellIndex(canvas, gridHandler.getGrid())
 
             if (settings.drawDogBounds)
-                drawDogBounds(canvas, objects)
+                drawDogBounds(canvas, dog)
 
-            goatPath?.filter { it.visited }?.forEach {
-                drawCell(canvas, rectPaint.apply {
-                    color = goatVisitedColor
-                    style = Paint.Style.FILL_AND_STROKE
-                }, it)
-            }
+            drawGoatPath(canvas, goat)
+            if (settings.drawGoatBounds)
+                drawGoatBounds(canvas, gridHandler, goat)
 
             if (settings.drawRopeNodes)
-                drawRopeNodes(ropes, canvas, paint)
+                drawRopeNodes(canvas, ropes, paint)
 
-            drawRuler(ruller, canvas)
-            drawObjectAndRopes(objects, tempObject, ropes, canvas)
-
-            if (settings.drawGoatBounds)
-                drawGoatBounds(
-                    canvas,
-                    objects.find { it.gameObjectTag == GameObjectTags.GOAT } as Goat?,
-                    cellSize, numRows, numCols
-                )
+            drawRuler(canvas, ruller)
+            drawObjectAndRopes(canvas, objects, ropes, tempWhileMove)
 
         } catch (e: Exception) {
-            Log.e("MyTag", e.toString())
+            Log.e("mytag", "RenderService.render() ${e.printStackTrace()}")
         }
     }
 
 
-    private fun drawRuler(
-        ruller: MutableList<List<Any>>,
-        canvas: Canvas,
-    ) {
+    private fun drawRuler(canvas: Canvas, ruller: List<List<Any>>) {
         val rulerPaint: Paint = Paint().apply {
             color = Color.BLACK
             style = Paint.Style.STROKE
@@ -100,9 +89,9 @@ class RenderService {
     private fun drawBackground(canvas: Canvas) =
         canvas.drawColor(backgroundColor)
 
-    private fun drawDogBounds(canvas: Canvas, objects: MutableList<GameObject>) {
-        val dog = objects.find { it.gameObjectTag == GameObjectTags.DOG } as Dog?
-        dog?.bounds?.forEach {
+    private fun drawDogBounds(canvas: Canvas, dog: Dog?) {
+        if (dog == null) return
+        dog.bounds.forEach {
             drawCell(canvas, rectPaint.apply {
                 color = Color.LTGRAY
                 style = Paint.Style.FILL_AND_STROKE
@@ -110,33 +99,44 @@ class RenderService {
         }
     }
 
-    private fun drawGoatBounds(
-        canvas: Canvas,
-        goat: Goat?,
-        cellSize: Float,
-        numRows: Int,
-        numCols: Int,
-    ) {
+    private fun drawGoatPath(canvas: Canvas, goat: Goat?) {
+        if (goat != null && goat.path.isNotEmpty())
+            for (i in 0 until goat.lastVisitedIndex) {
+                drawCell(canvas, rectPaint.apply {
+                    color = goatVisitedColor
+                    style = Paint.Style.FILL_AND_STROKE
+                }, goat.path[i])
+            }
+    }
+
+    private fun drawGoatBounds(canvas: Canvas, gridHandler: GridHandler, goat: Goat?) {
+        if (goat == null) return
         val linePaint = rectPaint.apply {
             color = Color.MAGENTA
             style = Paint.Style.STROKE
             strokeWidth = 4f
         }
+
+//        TODO remove screenwidth and height variables before th release
+        val cellSize = gridHandler.cellSize
+        val numRows = gridHandler.numRows
+        val numCols = gridHandler.numColumns
+
         val screenHeight = cellSize * numRows
         val screenWidth = cellSize * numCols
-        val bounds = goat?.bounds// goat?.bounds2 // TODO Should be bounds not bounds2
-        try {
-            if (!bounds.isNullOrEmpty()) {
 
+        try {
+            if (goat.bounds.isNotEmpty()) {
+//                TODO Remove all that stuff from here
 //                val cx = bounds.map { it.x }.average().toFloat()
 //                val cy = bounds.map { it.y }.average().toFloat()
 //                val r = bounds.map { sqrt((it.x - cx).pow(2) + (it.y - cy).pow(2)) }.average()
 //                    .toFloat() + 10
 
-                val minX = bounds.minOfOrNull { it.x } ?: 0f
-                val minY = bounds.minOfOrNull { it.y } ?: 0f
-                val maxX = bounds.maxOfOrNull { it.x } ?: 0f
-                val maxY = bounds.maxOfOrNull { it.y } ?: 0f
+                val minX = goat.bounds.minOfOrNull { it.x } ?: 0f
+                val minY = goat.bounds.minOfOrNull { it.y } ?: 0f
+                val maxX = goat.bounds.maxOfOrNull { it.x } ?: 0f
+                val maxY = goat.bounds.maxOfOrNull { it.y } ?: 0f
 
                 var cx = (minX + maxX) / 2
                 var cy = (minY + maxY) / 2
@@ -156,40 +156,40 @@ class RenderService {
                 canvas.drawCircle(cx, cy, r, linePaint.apply { color = Color.WHITE })
 
                 canvas.drawRect(minX, maxY, maxX, minY, linePaint.apply { color = Color.RED })
-                bounds.forEach {
+//                TODO To here
+
+                goat.bounds.forEach {
                     drawCell(canvas, cell = it, paint = linePaint.apply { color = Color.BLUE })
                 }
-
                 //Draw the first cell
                 drawCell(
                     canvas,
-                    cell = bounds.first(),
+                    cell = goat.bounds.first(),
                     paint = linePaint.apply { color = Color.RED }
                 )
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("mytag", "RenderService.drawGoatBounds() ${e.printStackTrace()}")
         }
     }
 
     private fun drawObjectAndRopes(
-        objects: MutableList<GameObject>, tempObject: GameObject?,
-        ropes: MutableList<Rope>, canvas: Canvas,
+        canvas: Canvas, objects: List<GameObject>, ropes: List<Rope>, tempWhileMove: GameObject?,
     ) {
         try {
             ropes.forEach { it.draw(canvas, paint) }
 
             objects.forEach { it.draw(canvas, paint) }
-            tempObject?.draw(canvas, paint)
 
+            tempWhileMove?.draw(canvas, paint)
             objects.find { it.isTempOnRopeSet }?.drawBase(canvas, paint)
 
         } catch (e: Exception) {
-            Log.e("MyTag", e.toString())
+            Log.e("mytag", "RenderService.drawObjectAndRopes() ${e.printStackTrace()}")
         }
     }
 
-    private fun drawRopeNodes(ropes: MutableList<Rope>, canvas: Canvas, paint: Paint) =
+    private fun drawRopeNodes(canvas: Canvas, ropes: List<Rope>, paint: Paint) =
         try {
             ropes.forEach { rope ->
                 rope.ropePath.forEach {
@@ -197,33 +197,34 @@ class RenderService {
                 }
             }
         } catch (e: Exception) {
-            Log.e("MyTag", e.toString())
+            Log.e("mytag", "RenderService.drawRopeNodes() ${e.printStackTrace()}")
         }
 
-    private fun drawCellIndex(grid: List<Cell>, canvas: Canvas) {
-        for (i in grid.indices) {
-            drawCell(
-                canvas,
-                rectPaint.apply { style = Paint.Style.STROKE },
-                grid[i]
-            )
+    private fun drawCellIndex(canvas: Canvas, grid: Array<Array<Cell>>) {
+        for (i in grid.indices)
+            for (j in grid[i].indices) {
+                drawCell(
+                    canvas,
+                    rectPaint.apply { style = Paint.Style.STROKE },
+                    grid[i][j]
+                )
 
-            canvas.drawText(
-                "$i",
-                grid[i].x,
-                grid[i].y,
-                paint.apply {
-                    color = Color.BLACK
-                    textSize = 80f
-                    style = Paint.Style.STROKE
-                })
-        }
+                canvas.drawText(
+                    "$i ; $j",
+                    grid[i][j].x - 60,
+                    grid[i][j].y + 10,
+                    paint.apply {
+                        color = Color.BLACK
+                        textSize = 80f
+                        style = Paint.Style.STROKE
+                    })
+
+            }
     }
 
-    private fun drawCell(canvas: Canvas, paint: Paint, cell: Cell) {
+    private fun drawCell(canvas: Canvas, paint: Paint, cell: Cell) =
         canvas.drawRect(cell.rect, paint)
-//        canvas.drawCircle(cell.x, cell.y, 20f, paint)
-    }
+
 
     private fun setPaint() = Paint().apply {
         strokeWidth = STROKE_WIDTH

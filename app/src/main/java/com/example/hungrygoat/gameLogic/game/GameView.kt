@@ -3,6 +3,7 @@ package com.example.hungrygoat.gameLogic.game
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -29,9 +30,9 @@ class GameView(context: Context, attrs: AttributeSet? = null) :
             gameThread = GameThread(holder, "", LevelConditions.EMPTY)
             gameThread!!.setRunning(true)
             gameThread!!.start()
-        } else {
+        } else
             gameThread!!.start()
-        }
+
     }
 
     override fun surfaceChanged(p0: SurfaceHolder, p1: Int, p2: Int, p3: Int) {
@@ -59,14 +60,13 @@ class GameView(context: Context, attrs: AttributeSet? = null) :
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
-        // Здесь можно остановить и очистить gameThread
         if (gameThread != null) {
             gameThread?.stopThread()
             try {
                 gameThread?.join()
                 gameThread = null
             } catch (e: InterruptedException) {
-                e.printStackTrace()
+                Log.e("mytag", "GameView.surfaceDestroyed() ${e.printStackTrace()}")
             }
         }
     }
