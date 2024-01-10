@@ -87,7 +87,8 @@ class GameObjectFactory {
                     invokeAction()
                 }
 
-                PickedOptions.CLEAR -> null
+                PickedOptions.ERASER -> null
+                PickedOptions.NULL -> null
             }
 
         } catch (e: Exception) {
@@ -118,10 +119,7 @@ class GameObjectFactory {
             null
         else {
             val length = gridHandler.distBetween(
-                tempObj.x,
-                tempObj.y,
-                clickedObj.x,
-                clickedObj.y,
+                tempObj, clickedObj,
                 "GameObjectFactory"
             )
             val isTiedToRope = nodes.isNotEmpty()
@@ -129,6 +127,8 @@ class GameObjectFactory {
                 setRopeNodes()
                 setReachedSet(gridHandler)
             }
+            if (isTiedToRope)
+                nodes.first().baseRope.attachedRopes.add(rope)
 
             rope
         }

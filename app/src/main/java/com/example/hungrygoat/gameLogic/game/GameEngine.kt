@@ -13,6 +13,7 @@ import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Dog
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
 import com.example.hungrygoat.gameLogic.services.GridHandler
+import com.example.hungrygoat.gameLogic.services.InputHandler
 import com.example.hungrygoat.gameLogic.services.PhysicService
 import com.example.hungrygoat.gameLogic.services.RenderService
 import com.example.hungrygoat.gameLogic.services.SolutionService
@@ -25,7 +26,6 @@ class GameEngine {
         private val renderService = RenderService()
 
         private val gridHandler = GridHandler()
-        private val physicService = PhysicService()
         private val gameObjectFactory = GameObjectFactory()
 
         private var goat: Goat? = null
@@ -90,9 +90,10 @@ class GameEngine {
         )
 
     fun createNewObject(x: Float, y: Float, pickedOption: PickedOptions) {
-        if (SingletonAppConstantsInfo.getAppConst()
-                .getState() == GameStates.STATE_PLAYER_PLACE_OBJECTS
-        ) {
+        val appState = SingletonAppConstantsInfo.getAppConst()
+            .getState()
+        if (appState == GameStates.STATE_PLAYER_PLACE_OBJECTS) {
+            if (pickedOption == PickedOptions.ERASER) eraseObject(x, y)
             val createdObject =
                 gameObjectFactory.createNewObject(
                     x, y, objects.find { it.isTempOnRopeSet }, pickedOption, gridHandler
@@ -100,6 +101,20 @@ class GameEngine {
             tempWhileMove = null
             ruler.clear()
             handleCreatedObject(createdObject ?: return)
+        }
+    }
+
+    private fun eraseObject(x: Float, y: Float) {
+        val clickedObject = InputHandler().getClickedObject(objects, x, y)
+
+        if (clickedObject != null)
+            removeFromObjects(clickedObject)
+        else {
+            val clickedRope =
+                InputHandler().getClickedRopeNodeObject(
+                    ropes, x, y
+                ).firstOrNull()?.baseRope
+            removeFromRopes(clickedRope)
         }
     }
 
@@ -115,8 +130,8 @@ class GameEngine {
             tempWhileMove?.y = y
 
             objects.forEach {
-                val angle = physicService.calcAngleBetweenInDeg(
-                    it, tempWhileMove!!
+                val angle = PhysicService().calcAngleBetweenInDeg(
+                    tempWhileMove!!, it
                 )
                 ruler.add(listOf(tempWhileMove!!, it, angle))
             }
@@ -135,14 +150,10 @@ class GameEngine {
 
     private fun addToRopes(obj: GameObject) {
         val rope = obj as Rope
+        if (ropes.any { it.isTiedToThisRope(rope) }) return
 
         val isDog = isObjADog(rope.objectTo, rope.objectFrom)
         val isGoat = isObjAGoat(rope.objectTo, rope.objectFrom)
-
-
-        val objFrom = rope.objectFrom
-        val objTo = rope.objectTo
-        if (ropes.any { it.objectTo == objTo || it.objectTo == objFrom || it.objectFrom == objTo || it.objectFrom == objFrom }) return
 
         if (isDog)
             dog?.attachRope(rope)
@@ -172,14 +183,33 @@ class GameEngine {
     }
 
     private fun removeFromObjects(obj: GameObject?) {
-        val curObjTag = obj?.gameObjectTag
+        if (obj == null) return
 
-        objects.removeIf { it.gameObjectTag == curObjTag }
+        val curObjTag = obj.gameObjectTag
+
+        objects.removeIf { it.gameObjectTag == curObjTag && it.x == obj.x && it.y == obj.y }
+        if (curObjTag == GameObjectTags.GOAT)
+            goat = null
+        else if (curObjTag == GameObjectTags.DOG)
+            dog = null
 
         val ropeToRemove =
             ropes.find { it.objectTo.gameObjectTag == curObjTag || it.objectFrom.gameObjectTag == curObjTag }
 
-        ropes.remove(ropeToRemove)
+        removeFromRopes(ropeToRemove)
+    }
+
+    private fun removeFromRopes(rope: Rope?) {
+        if (rope == null) return
+
+        if (rope.tiedToMovale) {
+            goat?.deattachRope(rope)
+            dog?.deattachRope(rope)
+        }
+
+        ropes.remove(rope)
+        rope.attachedRopes.forEach { removeFromRopes(it) }
+        rope.remove()
     }
 
     private fun isObjADog(vararg objs: GameObject): Boolean =

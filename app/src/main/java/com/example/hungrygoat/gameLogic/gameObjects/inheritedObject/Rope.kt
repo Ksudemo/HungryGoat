@@ -31,7 +31,7 @@ class Rope(
         objectFrom.gameObjectTag == GameObjectTags.DOG || objectFrom.gameObjectTag == GameObjectTags.GOAT
     private val isObjToMovable =
         objectTo.gameObjectTag == GameObjectTags.DOG || objectTo.gameObjectTag == GameObjectTags.GOAT
-
+    val tiedToMovale = isObjToMovable || isObjFromMovable
     override fun draw(canvas: Canvas, paint: Paint) {
         paint.color = color
         canvas.drawLine(objectFrom.x, objectFrom.y, objectTo.x, objectTo.y, paint)
@@ -100,7 +100,7 @@ class Rope(
 
     fun setReachedSet(gridHandler: GridHandler) {
 //        If not tied to a rope and non of obj's connected is a movable (goat or dog)
-        if (!isTiedToRope && !(isObjFromMovable || isObjToMovable))
+        if (!isTiedToRope && !(tiedToMovale))
             return
 
         val grid = gridHandler.getGrid()
@@ -119,14 +119,13 @@ class Rope(
 
     private fun canReachCell(
         gridHandler: GridHandler,
-        x: Float, y: Float,
-        targetCell: Cell,
+        closest: GameObject,
+        targetCell: GameObject,
     ): Boolean {
-
         return gridHandler.distBetween(
-            x, y,
-            targetCell.x, targetCell.y, "ropeCanReach"
-        ) <= maxLength
+            closest,
+            targetCell, "ropeCanReach"
+        ) <= maxLength + gridHandler.cellSize / 2
     }
 
     private fun canRopeReachCell(
@@ -134,17 +133,40 @@ class Rope(
         baseRope: Rope?,
         targetCell: Cell,
     ): Boolean {
-        if (isTiedToRope && baseRope != null && baseRope.ropePath.any { ropeNode ->
+        if (isTiedToRope && baseRope != null && baseRope.ropeNodes.any { ropeNode ->
                 val closest = gridHandler.getClosestCell(ropeNode.x, ropeNode.y) // TODO rework(?)
-                canReachCell(gridHandler, closest.x, closest.y, targetCell)
+                canReachCell(gridHandler, closest, targetCell)
             })
             return true
 
         val anchor = getAnchorPoint() ?: return false
-        return canReachCell(gridHandler, anchor.x, anchor.y, targetCell)
+        return canReachCell(gridHandler, anchor, targetCell)
     }
 
     private fun getAnchorPoint(): GameObject? = getRopeNode() ?: getPeg()
+
+    fun isTiedToThisRope(other: Rope): Boolean {
+
+        val objectFromTheSame = objectFrom == other.objectTo || objectFrom == other.objectFrom
+        val objectToTheSame = objectTo == other.objectTo || objectTo == other.objectFrom
+        if (!(objectFromTheSame || objectToTheSame)) return false
+
+        val otherAnchor = other.getAnchorPoint()
+        ropeNodes.forEach {
+            if (otherAnchor == it) return true
+        }
+        val cond = ropeNodes.any { otherAnchor == it }
+
+
+        Log.d(
+            "mytag",
+            "objectFromTheSame = $objectFromTheSame\n objectToTheSame = $objectToTheSame\n cond = $cond "
+        )
+
+
+        return cond
+    }
+
 
     private fun getRopeConnectedTo(): Rope? =
         when (isTiedToRope) {
@@ -192,7 +214,7 @@ class Rope(
             val nextX = x1 + fraction * dx
             val nexty = y1 + fraction * dy
 
-            ropePath.add(RopeNode(this, nextX, nexty, GameObjectTags.RopeNode))
+            ropeNodes.add(RopeNode(this, nextX, nexty, GameObjectTags.RopeNode))
         }
 
     }

@@ -16,6 +16,24 @@ class RopeNode(val baseRope: Rope, vx: Float, vy: Float, tag: GameObjectTags) :
         })
     }
 
+    override fun hashCode(): Int {
+        var result = x.hashCode()
+        result = 31 * result + y.hashCode()
+        return result
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other == null || (this.javaClass != other.javaClass)) return false
+
+        other as GameObject
+        if (!(other.x == this.x && other.y == this.y)) return false
+        if (this === other || this.gameObjectTag == other.gameObjectTag) return true
+
+
+
+        return true
+    }
+
     override fun toString(): String =
         "baseRope - $baseRope, x = $x, y = $y , tag = $gameObjectTag"
 }

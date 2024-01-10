@@ -51,7 +51,7 @@ class RenderService {
 
             drawGoatPath(canvas, goat)
             if (settings.drawGoatBounds)
-                drawGoatBounds(canvas, gridHandler, goat)
+                drawGoatBounds(canvas, goat)
 
             if (settings.drawRopeNodes)
                 drawRopeNodes(canvas, ropes, paint)
@@ -109,7 +109,7 @@ class RenderService {
             }
     }
 
-    private fun drawGoatBounds(canvas: Canvas, gridHandler: GridHandler, goat: Goat?) {
+    private fun drawGoatBounds(canvas: Canvas, goat: Goat?) {
         if (goat == null) return
         val linePaint = rectPaint.apply {
             color = Color.MAGENTA
@@ -117,56 +117,33 @@ class RenderService {
             strokeWidth = 4f
         }
 
-//        TODO remove screenwidth and height variables before th release
-        val cellSize = gridHandler.cellSize
-        val numRows = gridHandler.numRows
-        val numCols = gridHandler.numColumns
-
-        val screenHeight = cellSize * numRows
-        val screenWidth = cellSize * numCols
-
         try {
-            if (goat.bounds.isNotEmpty()) {
-//                TODO Remove all that stuff from here
-//                val cx = bounds.map { it.x }.average().toFloat()
-//                val cy = bounds.map { it.y }.average().toFloat()
-//                val r = bounds.map { sqrt((it.x - cx).pow(2) + (it.y - cy).pow(2)) }.average()
-//                    .toFloat() + 10
+            val bounds = goat.bounds
+            if (bounds.isNotEmpty()) {
+                val minX = bounds.minOfOrNull { it.x } ?: 0f
+                val minY = bounds.minOfOrNull { it.y } ?: 0f
+                val maxX = bounds.maxOfOrNull { it.x } ?: 0f
+                val maxY = bounds.maxOfOrNull { it.y } ?: 0f
 
-                val minX = goat.bounds.minOfOrNull { it.x } ?: 0f
-                val minY = goat.bounds.minOfOrNull { it.y } ?: 0f
-                val maxX = goat.bounds.maxOfOrNull { it.x } ?: 0f
-                val maxY = goat.bounds.maxOfOrNull { it.y } ?: 0f
+                val rightTop = bounds.find { it.x == maxX && it.y == minY }
+                val rightBot = bounds.find { it.x == maxX && it.y == maxY }
+                val leftBot = bounds.find { it.x == minX && it.y == maxY }
+                val leftTop = bounds.find { it.x == minX && it.y == minY }
 
-                var cx = (minX + maxX) / 2
-                var cy = (minY + maxY) / 2
+                val cx = (minX + maxX) / 2
+                val cy = (minY + maxY) / 2
                 val r = max(abs((maxY - minY) / 2), abs((maxX - minX) / 2))
 
-                cx = when {
-                    cx - r < 0 -> r
-                    cx + r > screenWidth -> screenWidth - r
-                    else -> cx
-                }
-                cy = when {
-                    cy - r < 0 -> r
-                    cy + r > screenHeight -> screenHeight - r
-                    else -> cy
-                }
-
                 canvas.drawCircle(cx, cy, r, linePaint.apply { color = Color.WHITE })
+                for (b in bounds)
+                    drawCell(canvas, cell = b, paint = linePaint.apply { color = Color.BLUE })
 
-                canvas.drawRect(minX, maxY, maxX, minY, linePaint.apply { color = Color.RED })
-//                TODO To here
-
-                goat.bounds.forEach {
-                    drawCell(canvas, cell = it, paint = linePaint.apply { color = Color.BLUE })
-                }
+                drawCell(canvas, linePaint.apply { color = Color.RED }, rightTop)
+                drawCell(canvas, linePaint.apply { color = Color.GREEN }, rightBot)
+                drawCell(canvas, linePaint.apply { color = Color.BLUE }, leftBot)
+                drawCell(canvas, linePaint.apply { color = Color.BLACK }, leftTop)
                 //Draw the first cell
-                drawCell(
-                    canvas,
-                    cell = goat.bounds.first(),
-                    paint = linePaint.apply { color = Color.RED }
-                )
+//                drawCell(canvas, linePaint.apply { color = Color.RED }, bounds.first())
             }
         } catch (e: Exception) {
             Log.e("mytag", "RenderService.drawGoatBounds() ${e.printStackTrace()}")
@@ -191,11 +168,9 @@ class RenderService {
 
     private fun drawRopeNodes(canvas: Canvas, ropes: List<Rope>, paint: Paint) =
         try {
-            ropes.forEach { rope ->
-                rope.ropePath.forEach {
-                    it.draw(canvas, paint)
-                }
-            }
+            for (rope in ropes)
+                for (node in rope.ropeNodes)
+                    node.draw(canvas, paint)
         } catch (e: Exception) {
             Log.e("mytag", "RenderService.drawRopeNodes() ${e.printStackTrace()}")
         }
@@ -218,13 +193,13 @@ class RenderService {
                         textSize = 80f
                         style = Paint.Style.STROKE
                     })
-
             }
     }
 
-    private fun drawCell(canvas: Canvas, paint: Paint, cell: Cell) =
-        canvas.drawRect(cell.rect, paint)
-
+    private fun drawCell(canvas: Canvas, paint: Paint, cell: Cell?) {
+        if (cell == null) return
+        cell.draw(canvas, paint)
+    }
 
     private fun setPaint() = Paint().apply {
         strokeWidth = STROKE_WIDTH

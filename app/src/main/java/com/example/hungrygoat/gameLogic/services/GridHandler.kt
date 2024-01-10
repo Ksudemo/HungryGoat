@@ -6,12 +6,11 @@ import com.example.hungrygoat.gameLogic.game.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
 import kotlin.math.ceil
 import kotlin.math.min
-import kotlin.math.sqrt
 import kotlin.properties.Delegates
 
 @Suppress("unused")
 class GridHandler {
-    //    TODO Remove that two variables after test
+    //    TODO Remove that variable after test
     val testMap = mutableMapOf<String, Pair<Int, Int>>()
 
     private lateinit var grid: Array<Array<Cell>>
@@ -44,16 +43,14 @@ class GridHandler {
         numRows = ceil(height / cellSize).toInt()
         numColumns = ceil(width / cellSize).toInt()
 
-        val temp: Array<Array<Cell>> = Array(numColumns) { i ->
+        grid = Array(numColumns) { i ->
             Array(numRows) { j ->
                 val rect = getRect(i, j, cellSize, cellSize)
                 Cell(rect, rect.centerX(), rect.centerY(), i, j)
             }
         }
-
-        grid = temp
-        numColumns = temp.size
-        numRows = temp.firstOrNull()?.size ?: 0
+        numColumns = grid.size
+        numRows = grid.firstOrNull()?.size ?: 0
 
         Log.v("mytag", "Cell size - $cellSize")
         Log.v(
@@ -78,13 +75,6 @@ class GridHandler {
         return null
     }
 
-
-    private fun distBetween(x1: Float, y1: Float, x2: Float, y2: Float): Float {
-        val dx = x1 - x2
-        val dy = y1 - y2
-        return sqrt(dx * dx + dy * dy)
-    }
-
     fun getClosestCell(x: Float, y: Float): Cell {
         val i = (x / cellSize).toInt().coerceIn(0 until numColumns)
         val j = (y / cellSize).toInt().coerceIn(0 until numRows)
@@ -92,10 +82,7 @@ class GridHandler {
         return grid[i][j]
     }
 
-    fun distBetween(obj: GameObject, other: GameObject, caller: String) =
-        distBetween(obj.x, obj.y, other.x, other.y, caller)
-
-    fun distBetween(x: Float, y: Float, otherX: Float, otherY: Float, caller: String): Float {
+    fun distBetween(obj: GameObject, other: GameObject, caller: String): Float {
         testMap.compute(caller) { _, value ->
             if (value == null)
                 Pair(1, 0)
@@ -104,8 +91,8 @@ class GridHandler {
             }
         }
 
-        val p1 = Pair(x, y)
-        val p2 = Pair(otherX, otherY)
+        val p1 = Pair(obj.x, obj.y)
+        val p2 = Pair(other.x, other.y)
         val key = if (p1.hashCode() < p2.hashCode()) Pair(p1, p2) else Pair(p2, p1)
 
         if (distances.containsKey(key)) {
@@ -114,12 +101,17 @@ class GridHandler {
             }
             return distances[key]!!
         }
-        val d = distBetween(x, y, otherX, otherY)
+        val d = PhysicService().distBetween(obj.x, obj.y, other.x, other.y)
         distances[key] = d
         return d
     }
 
     fun getBoundaryCells(availableTargets: Set<Cell>): List<Cell> {
+        fun isBoundaryCell(avalibleTargets: Set<Cell>, cell: Cell): Boolean {
+            val cellNeighbors = cell.getNeighbors(grid)
+            return cellNeighbors.size < 8 || cellNeighbors.any { !avalibleTargets.contains(it) }
+        }
+
         if (availableTargets.size == grid.size * grid.first().size) {
             val res = mutableListOf<Cell>()
             for (i in 0 until numColumns) {
@@ -148,11 +140,6 @@ class GridHandler {
             }.toSet()
 
         return filteredTargets.filter { isBoundaryCell(filteredTargets, it) }
-    }
-
-    private fun isBoundaryCell(avalibleTargets: Set<Cell>, cell: Cell): Boolean {
-        val cellNeighbors = cell.getNeighbors(grid)
-        return cellNeighbors.size < 8 || cellNeighbors.any { !avalibleTargets.contains(it) }
     }
 
     fun freeGrid() {

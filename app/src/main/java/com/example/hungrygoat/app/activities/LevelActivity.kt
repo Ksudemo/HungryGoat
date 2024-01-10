@@ -149,7 +149,12 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
         ).apply { weight = 1f }
         ll.addView(gameView)
 
-        ll.addView(getButtonsLinearLayout(4, listOf("Колышек", "Верёвка", "Коза", "Собака")))
+        ll.addView(
+            getButtonsLinearLayout(
+                5,
+                listOf("Колышек", "Верёвка", "Коза", "Собака", "Ластик")
+            )
+        )
 
         backImgButton.setOnClickListener(this)
         levelCondImgButton.setOnClickListener(this)
@@ -249,7 +254,8 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
                         1 -> PickedOptions.ROPE
                         2 -> PickedOptions.GOAT
                         3 -> PickedOptions.DOG
-                        else -> PickedOptions.CLEAR
+                        4 -> PickedOptions.ERASER
+                        else -> PickedOptions.NULL
                     }
                     recheckButtons(buttons, i)
                     Log.d("MyTag", pickedOption.toString())

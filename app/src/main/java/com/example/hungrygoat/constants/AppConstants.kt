@@ -9,7 +9,7 @@ object SingletonAppConstantsInfo {
     fun getAppConst(): AppConstants {
         if (!::appConstants.isInitialized) {
             appConstants = AppConstants()
-            appConstants.changeOption(PickedOptions.CLEAR)
+            appConstants.changeOption(PickedOptions.NULL)
             appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
         }
 

@@ -14,7 +14,7 @@ class InputHandler {
     fun getClickedRopeNodeObject(ropes: List<Rope>, x: Float, y: Float): MutableList<RopeNode> {
         val nodes = mutableListOf<RopeNode>()
         ropes.forEach { rope ->
-            val filtered = rope.ropePath.filter {
+            val filtered = rope.ropeNodes.filter {
                 distanceBetween(it.x, it.y, x, y) <= it.circleRadius
             }
             nodes.addAll(filtered)

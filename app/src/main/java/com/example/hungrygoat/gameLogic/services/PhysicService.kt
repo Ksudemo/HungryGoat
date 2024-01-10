@@ -4,7 +4,6 @@ import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.EmptyObject
 import kotlin.math.acos
-import kotlin.math.pow
 import kotlin.math.sqrt
 
 class PhysicService {
@@ -18,17 +17,33 @@ class PhysicService {
         return !((isAaGoat && isBaDog) || (isAaDog && isBaGoat))
     }
 
-    fun calcAngleBetweenInDeg(a: GameObject, b: GameObject?): Double {
-        if (b == null)
+    fun calcAngleBetweenInDeg(a: GameObject?, b: GameObject?): Double {
+        if (a == null || b == null) return -1.0
+        val c = EmptyObject(b.x + 1, b.y, GameObjectTags.EMPTY)
+        return calcAngleBetweenInDeg(a, b, c)
+    }
+
+    fun calcAngleBetweenInDeg(a: GameObject?, b: GameObject?, c: GameObject?): Double {
+        if (a == null || b == null || c == null)
             return -1.0
 
-        val c = EmptyObject(a.x + 1, a.y, GameObjectTags.EMPTY)
-        val dotProduct =
-            (b.x - a.x) * (c.x - a.x) + (b.y - a.y) * (c.y - a.y)
-        val magnitudeA =
-            sqrt((b.x - a.x).pow(2) + (b.y - a.y).pow(2))
-        val magnitudeC =
-            sqrt((c.x - a.x).pow(2) + (c.y - a.y).pow(2))
-        return Math.toDegrees(acos(dotProduct / (magnitudeA * magnitudeC)).toDouble())
+        val x1 = a.x - b.x
+        val x2 = c.x - b.x
+        val y1 = a.y - b.y
+        val y2 = c.y - b.y
+
+        val d1 = sqrt(x1 * x1 + y1 * y1)
+        val d2 = sqrt(x2 * x2 + y2 * y2)
+
+        val fraction = (x1 * x2 + y1 * y2) / (d1 * d2).toDouble()
+
+        return Math.toDegrees(acos(fraction))
     }
+
+    fun distBetween(x1: Float, y1: Float, x2: Float, y2: Float): Float {
+        val dx = x1 - x2
+        val dy = y1 - y2
+        return sqrt(dx * dx + dy * dy)
+    }
+
 }
