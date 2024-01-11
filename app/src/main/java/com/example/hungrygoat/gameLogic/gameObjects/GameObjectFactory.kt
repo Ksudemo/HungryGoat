@@ -48,9 +48,10 @@ class GameObjectFactory {
                     val clickedGameObject =
                         inputHandler.getClickedObject(GameEngine.getObjects(), clickedX, clickedY)
                             ?: nodes.firstOrNull()
-
+                    if (clickedGameObject == null || clickedGameObject == tempObj) return null
+                    Log.d("mytag", "tempObj = $tempObj\n clickedGameObject = $clickedGameObject")
                     if (tempObj == null)
-                        clickedGameObject?.apply {
+                        clickedGameObject.apply {
                             isTempOnRopeSet = true
                         }
                     else
@@ -104,14 +105,14 @@ class GameObjectFactory {
     private fun setRope(
         gridHandler: GridHandler,
         tempObj: GameObject?,
-        clickedObj: GameObject?,
+        clickedObj: GameObject,
         nodes: List<RopeNode>,
     ): GameObject? {
 
         tempObj?.isTempOnRopeSet = false
-        clickedObj?.isTempOnRopeSet = false
+        clickedObj.isTempOnRopeSet = false
 
-        return if (tempObj == null || clickedObj == null || !physicService.canTied(
+        return if (tempObj == null || !physicService.canTied(
                 tempObj,
                 clickedObj
             ) || tempObj == clickedObj

@@ -6,6 +6,8 @@ import android.view.SurfaceHolder
 import com.example.hungrygoat.constants.GameStates
 import com.example.hungrygoat.constants.LevelConditions
 import com.example.hungrygoat.constants.SingletonAppConstantsInfo
+import com.example.hungrygoat.gameLogic.interfaces.LevelCompleteListener
+import com.example.hungrygoat.gameLogic.interfaces.LevelFailedListener
 
 class GameThread(
     private val surfaceHolder: SurfaceHolder,
@@ -20,24 +22,21 @@ class GameThread(
 
     private var solutionNotChecked = true
 
-    fun interface LevelDoneListener {
-        fun onLevelDoneEvent()
+    private var levelCompleteListener: LevelCompleteListener? = LevelCompleteListener { }
+    private var levelFailedListener: LevelFailedListener? = LevelFailedListener {}
+
+    fun registerLevelEndingListeners(
+        levelComplete: LevelCompleteListener,
+        levelFailed: LevelFailedListener,
+    ) {
+        levelCompleteListener = levelComplete
+        levelFailedListener = levelFailed
     }
 
-    private val listeners = mutableListOf<LevelDoneListener>()
-
-    fun registerEventListener(listener: LevelDoneListener) =
-        listeners.add(listener)
-
-
-    fun unregisterEventListener(listener: LevelDoneListener) =
-        listeners.remove(listener)
-
-    private fun triggerEvent() =
-        listeners.forEach {
-            it.onLevelDoneEvent()
-        }
-
+    fun unregisterLevelEndingListeners() {
+        levelCompleteListener = null
+        levelFailedListener = null
+    }
 
     override fun run() {
         while (isRunning) {
@@ -65,9 +64,12 @@ class GameThread(
 
                 GameStates.STATE_CHECK_SOLUTION -> {
                     if (solutionNotChecked) {
-                        if (engine.checkSolution(levelCondition))
-                            triggerEvent()
+
                         solutionNotChecked = false
+                        if (engine.checkSolution(levelCondition))
+                            levelCompleteListener?.onLevelComplete()
+                        else
+                            levelFailedListener?.onLevelFailed()
                     }
                 }
 

@@ -21,7 +21,6 @@ import com.example.hungrygoat.gameLogic.services.SolutionService
 class GameEngine {
 
     companion object {
-
         private val solutionService = SolutionService()
         private val renderService = RenderService()
 
@@ -167,12 +166,18 @@ class GameEngine {
         val isDog = isObjADog(obj)
         val isGoat = isObjAGoat(obj)
 
+        Log.d("mytag", "isGoat = $isGoat\n !obj.isTempOnRopeSet = ${!obj.isTempOnRopeSet}")
         if ((isDog || isGoat) && !obj.isTempOnRopeSet) {
             removeFromObjects(obj)
 
             when {
-                isGoat -> goat = obj as Goat
+                isGoat -> {
+                    goat = null
+                    goat = obj as Goat
+                }
+
                 else -> {
+                    dog = null
                     dog = obj as Dog
                     goat?.moveToStart()
                 }
@@ -186,11 +191,17 @@ class GameEngine {
         if (obj == null) return
 
         val curObjTag = obj.gameObjectTag
+        val curObjAGoat = isObjAGoat(obj)
+        val curObjADog = isObjADog(obj)
 
-        objects.removeIf { it.gameObjectTag == curObjTag && it.x == obj.x && it.y == obj.y }
-        if (curObjTag == GameObjectTags.GOAT)
+        if (curObjADog || curObjAGoat)
+            objects.removeIf { it.gameObjectTag == curObjTag }
+        else
+            objects.removeIf { it.gameObjectTag == curObjTag && it.x == obj.x && it.y == obj.y }
+
+        if (curObjAGoat)
             goat = null
-        else if (curObjTag == GameObjectTags.DOG)
+        else if (curObjADog)
             dog = null
 
         val ropeToRemove =

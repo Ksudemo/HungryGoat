@@ -1,14 +1,12 @@
 package com.example.hungrygoat.app.activities
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.view.View.OnClickListener
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -18,7 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.example.hungrygoat.R
 import com.example.hungrygoat.app.helpers.CountUpTimer
-import com.example.hungrygoat.app.helpers.alertDialogs.LevelInfoDialog
+import com.example.hungrygoat.app.helpers.alertDialogs.GameDialog
 import com.example.hungrygoat.constants.AppConstants
 import com.example.hungrygoat.constants.GameStates
 import com.example.hungrygoat.constants.LevelConditions
@@ -27,9 +25,13 @@ import com.example.hungrygoat.constants.SingletonAppConstantsInfo
 import com.example.hungrygoat.constants.translatedMap
 import com.example.hungrygoat.gameLogic.game.GameThread
 import com.example.hungrygoat.gameLogic.game.GameView
+import com.example.hungrygoat.gameLogic.interfaces.LevelCompleteListener
+import com.example.hungrygoat.gameLogic.interfaces.LevelFailedListener
+
 
 @Suppress("SameParameterValue")
-class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDoneListener {
+class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteListener,
+    LevelFailedListener {
 
     private lateinit var backImgButton: ImageButton
     private lateinit var levelCondImgButton: ImageButton
@@ -80,7 +82,7 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
 
         val settings = applicationContext.getSharedPreferences(
             resources.getString(R.string.sharedPrefsSettingsName),
-            Context.MODE_PRIVATE
+            MODE_PRIVATE
         )
 
         settings.apply {
@@ -101,36 +103,63 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
         val holder = gameView.holder
 
         gameThread = GameThread(holder, "MyFavoriteThread", levelCondition)
-        gameThread.registerEventListener(this)
-
+        gameThread.registerLevelEndingListeners(this, this)
         gameView.setGameThread(gameThread)
 
         gameView.initView()
+
+        levelCondImgButton.callOnClick()
     }
 
     override fun onStop() {
         super.onStop()
-        gameThread.unregisterEventListener(this)
+        gameThread.unregisterLevelEndingListeners()
         gameThread.stopThread()
+
         appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
         appConstants.getEngine().killEngine()
     }
 
 
-    override fun onLevelDoneEvent() {
-        Log.d("MyTag", "Level done!")
-        runOnUiThread {
+    override fun onLevelComplete() {
+        val negClickListener = { }
+        val posClickListener = {
             Toast.makeText(
                 applicationContext,
-                "Вы прошли уровень за $lastTime сек.",
+                "Следующий уровень будет потом",
                 Toast.LENGTH_SHORT
             ).show()
-            //               TODO Добавить меню с горизонтальными кнопками: "Повторить уровень" "Следующий уровень"  И текстом отображающем текущее время в центре. Если повторить, то сбросить таймер в ноль, а если следующий, то выбрать следущее условие и сбросить таймер в ноль
-
-//            val popupMenu = PopupMenu(applicationContext, gameView)
-//            popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
-//            popupMenu.show()
         }
+        createDialog(
+            GameDialog(),
+            "Уровень закончен.",
+            "Вы прошли уровень за $lastTime сек.",
+            "Повторить",
+            "Следующий уровень",
+            negClickListener,
+            posClickListener
+        )
+    }
+
+    override fun onLevelFailed() {
+        Log.d("MyTag", "Level Failed!")
+        val negClickListener = { resetCanvas() }
+        val posClickListener = {
+            Toast.makeText(
+                applicationContext,
+                "Не расстривайся!",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+        createDialog(
+            GameDialog(),
+            "Неудачная попытка.",
+            "Вы не прошли уровень",
+            "Сбросить всё",
+            "Продолжить",
+            negClickListener,
+            posClickListener
+        )
     }
 
     private fun setViews() {
@@ -181,20 +210,24 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
     }
 
     private fun createDialog(
+        dialog: GameDialog,
         titleString: String,
         textString: String,
-        posString: String,
         negString: String,
+        posString: String,
+        negClickListener: GameDialog.OnClickListener,
+        posClickListener: GameDialog.OnClickListener,
     ) {
         val manager = supportFragmentManager
         val transaction = manager.beginTransaction()
-        val dialog = LevelInfoDialog()
 
         val bundle = Bundle()
         bundle.putString("title", titleString)
         bundle.putString("text", textString)
         bundle.putString("posButton", posString)
         bundle.putString("negButton", negString)
+
+        dialog.setOnClickListener(negClickListener, posClickListener)
 
         dialog.arguments = bundle
         dialog.show(manager, dialogTag)
@@ -210,12 +243,20 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
         } else timer.start()
     }
 
-    private fun recheckButtons(buttons: MutableList<Button>, i: Int) {
+    private fun resetButtons(buttons: MutableList<Button>, i: Int) {
         buttons.forEach {
             it.background = defaultBackgroundDrawable
         }
         if (i in buttons.indices)
             buttons[i].background = clickedBackgroundDrawable
+    }
+
+    private fun resetCanvas() {
+        updateTimer(GameStates.STATE_PLAYER_PLACE_OBJECTS, true)
+        appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
+        appConstants.getEngine().clearObjects()
+
+        resetButtons(buttons, -1)
     }
 
     private fun getButtonsLinearLayout(count: Int, names: List<String>): LinearLayout {
@@ -257,7 +298,7 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
                         4 -> PickedOptions.ERASER
                         else -> PickedOptions.NULL
                     }
-                    recheckButtons(buttons, i)
+                    resetButtons(buttons, i)
                     Log.d("MyTag", pickedOption.toString())
                     appConstants.changeOption(pickedOption)
                 }
@@ -270,7 +311,7 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
         return buttonsPaneLinearLayout
     }
 
-    override fun onClick(view: View?) {
+    override fun onClick(view: View?) =
         when (view?.id) {
             R.id.backImgButton -> {
                 startActivity(
@@ -283,20 +324,15 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
 
             R.id.levelConditionImgButton -> {
                 createDialog(
-                    "Условие уровня",
+                    GameDialog(),
+                    "Условие уровня:",
                     "${translatedMap[levelCondition]}",
-                    "Круто!",
-                    "Не круто :("
+                    "Не круто :(",
+                    "Круто!", {}, {}
                 )
             }
 
-            R.id.clearCanvasImgButton -> {
-                updateTimer(GameStates.STATE_PLAYER_PLACE_OBJECTS, true)
-                appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
-                appConstants.getEngine().clearObjects()
-
-                recheckButtons(buttons, -1)
-            }
+            R.id.clearCanvasImgButton -> resetCanvas()
 
             R.id.playImgButton -> {
                 val currentState =
@@ -309,7 +345,6 @@ class LevelActivity : AppCompatActivity(), OnClickListener, GameThread.LevelDone
                 appConstants.changeState(currentState)
             }
 
-            else -> return
+            else -> Unit
         }
-    }
 }
