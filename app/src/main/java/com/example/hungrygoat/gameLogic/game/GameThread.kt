@@ -2,6 +2,7 @@ package com.example.hungrygoat.gameLogic.game
 
 import android.graphics.Paint
 import android.os.HandlerThread
+import android.util.Log
 import android.view.SurfaceHolder
 import com.example.hungrygoat.constants.GameStates
 import com.example.hungrygoat.constants.LevelConditions
@@ -11,8 +12,8 @@ import com.example.hungrygoat.gameLogic.interfaces.LevelFailedListener
 
 class GameThread(
     private val surfaceHolder: SurfaceHolder,
-    threadName: String,
-    private val levelCondition: LevelConditions,
+    private val threadName: String,
+    private var levelCondition: LevelConditions,
 ) : HandlerThread(threadName) {
 
     private var backgroundPaint: Paint = Paint()
@@ -66,7 +67,10 @@ class GameThread(
                     if (solutionNotChecked) {
 
                         solutionNotChecked = false
-                        if (engine.checkSolution(levelCondition))
+
+                        val solutionCorrect = engine.checkSolution(levelCondition)
+                        Log.d("mytag", "solution correct - $solutionCorrect")
+                        if (solutionCorrect)
                             levelCompleteListener?.onLevelComplete()
                         else
                             levelFailedListener?.onLevelFailed()
@@ -92,6 +96,10 @@ class GameThread(
 
             surfaceHolder.unlockCanvasAndPost(canvas)
         }
+    }
+
+    fun changeLevelCondition(lc: LevelConditions) {
+        levelCondition = lc
     }
 
     fun setRunning(b: Boolean) {

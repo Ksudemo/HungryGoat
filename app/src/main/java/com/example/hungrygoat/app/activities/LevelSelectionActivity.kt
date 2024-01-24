@@ -26,9 +26,9 @@ class LevelSelectionActivity : AppCompatActivity() {
 
         appConstants = SingletonAppConstantsInfo.getAppConst()
 
-        val adapter = RecyclerViewAdapter(appConstants.translatedList)
+        val adapter = RecyclerViewAdapter(appConstants.translatedLevelCondMap)
         adapter.setOnItemClickListener { position ->
-            val levelCondition = appConstants.levelsList[position].first
+            val levelCondition = appConstants.levelCondMap.toList()[position].first
 
             val extras = Bundle()
 
