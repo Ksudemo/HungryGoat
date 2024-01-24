@@ -43,10 +43,6 @@ class GameEngine {
 
     fun setGrid(w: Int, h: Int, cellSize: Float) {
         gridHandler.setGrid(w, h, cellSize)
-        createNewObject(447.65625f, 984.84375f, PickedOptions.PEG)
-        createNewObject(666.51044f, 1283.2812f, PickedOptions.GOAT)
-        createNewObject(447.65625f, 984.84375f, PickedOptions.ROPE)
-        createNewObject(666.51044f, 1283.2812f, PickedOptions.ROPE)
     }
 
     fun clearObjects() {
@@ -68,7 +64,7 @@ class GameEngine {
         when {
             goat == null || goat?.bounds?.isEmpty() == true -> false
             else ->
-                solutionService.checkSolution(goat!!, dog, gridHandler, levelCondition)
+                solutionService.checkSolution(goat!!, gridHandler, levelCondition)
         }
 
     fun update() {
@@ -170,6 +166,7 @@ class GameEngine {
         val isDog = isObjADog(obj)
         val isGoat = isObjAGoat(obj)
 
+        Log.d("mytag", "isGoat = $isGoat\n !obj.isTempOnRopeSet = ${!obj.isTempOnRopeSet}")
         if ((isDog || isGoat) && !obj.isTempOnRopeSet) {
             removeFromObjects(obj)
 
@@ -245,7 +242,7 @@ class GameEngine {
             "getDistance calls:\n ${gridHandler.testMap}\n"
         )
         gridHandler.testMap.clear()
-        clearObjects()
-        gridHandler.freeGrid()
+//        clearObjects()
+//        gridHandler.freeGrid()
     }
 }

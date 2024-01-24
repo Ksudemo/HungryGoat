@@ -105,14 +105,13 @@ class Rope(
 
         val grid = gridHandler.getGrid()
         val baseRope = getRopeConnectedTo()
-        val time1 = measureTimeMillis {
-            val indexPairs = getFilteredRanges(gridHandler).flatMap { (colRange, rowRange) ->
-                colRange.flatMap { i -> rowRange.map { j -> i to j } }
-            }
 
-            indexPairs.forEach { (i, j) ->
-                if (canRopeReachCell(gridHandler, baseRope, grid[i][j]))
-                    ropeReachedSet.add(grid[i][j])
+        val time1 = measureTimeMillis {
+            getFilteredRanges(gridHandler).forEach { (colRange, rowRange) ->
+                for (i in colRange)
+                    for (j in rowRange)
+                        if (canRopeReachCell(gridHandler, baseRope, grid[i][j]))
+                            ropeReachedSet.add(grid[i][j])
             }
         }
         Log.d("mytag", "loop and call canRopeReachCell time = $time1")
@@ -126,7 +125,7 @@ class Rope(
         return gridHandler.distBetween(
             closest,
             targetCell, "ropeCanReach"
-        ) <= maxLength //+ gridHandler.cellSize / 2
+        ) <= maxLength + gridHandler.cellSize / 2
     }
 
     private fun canRopeReachCell(
@@ -134,7 +133,6 @@ class Rope(
         baseRope: Rope?,
         targetCell: Cell,
     ): Boolean {
-
         if (isTiedToRope && baseRope != null && baseRope.ropeNodes.any { ropeNode ->
                 val closest = gridHandler.getClosestCell(ropeNode.x, ropeNode.y) // TODO rework(?)
                 canReachCell(gridHandler, closest, targetCell)
@@ -157,8 +155,16 @@ class Rope(
         ropeNodes.forEach {
             if (otherAnchor == it) return true
         }
+        val cond = ropeNodes.any { otherAnchor == it }
 
-        return ropeNodes.any { otherAnchor == it }
+
+        Log.d(
+            "mytag",
+            "objectFromTheSame = $objectFromTheSame\n objectToTheSame = $objectToTheSame\n cond = $cond "
+        )
+
+
+        return cond
     }
 
 

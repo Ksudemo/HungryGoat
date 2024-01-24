@@ -79,12 +79,8 @@
         android:weightSum="10"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.476"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbarLinearLayout"
-        app:layout_constraintVertical_bias="0.503">
-
-    </LinearLayout>
+        app:layout_constraintTop_toBottomOf="@+id/toolbarLinearLayout" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

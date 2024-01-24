@@ -29,7 +29,7 @@ class StartActivity : AppCompatActivity(), OnClickListener {
 
         setViews()
         appConstants = SingletonAppConstantsInfo.getAppConst()
-        appConstants.setLevelConditionsList(applicationContext)
+        appConstants.setLevelConditionsList()
     }
 
     private fun setViews() {
@@ -59,11 +59,9 @@ class StartActivity : AppCompatActivity(), OnClickListener {
                     lastLevelPlayedSharedPrefsStr,
                     Context.MODE_PRIVATE
                 )
-
-                val list = appConstants.levelCondMap.toList()
                 val lastLevelPlayed = lastLevelPlayedPrefs.getInt(lastLevelPlayedStr, 0)
                 val lastLevelPlayedCond =
-                    list[if (lastLevelPlayed in list.indices) lastLevelPlayed else 0]
+                    appConstants.levelsList[if (lastLevelPlayed in appConstants.levelsList.indices) lastLevelPlayed else 0]
 
                 val extras = Bundle().apply {
                     putSerializable("caller", StartActivity::class.java)

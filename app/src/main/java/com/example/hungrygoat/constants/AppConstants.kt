@@ -1,7 +1,6 @@
 package com.example.hungrygoat.constants
 
-import android.content.Context
-import android.content.SharedPreferences
+import android.util.Log
 import com.example.hungrygoat.gameLogic.game.GameEngine
 
 object SingletonAppConstantsInfo {
@@ -19,7 +18,7 @@ object SingletonAppConstantsInfo {
 }
 
 
-val translatedLevelConditions = mapOf(
+val translatedMap = mapOf(
     LevelConditions.CIRCLE to "Круг",
     LevelConditions.HALFCIRCLE to "Полукруг",
     LevelConditions.RING to "Кольцо",
@@ -31,7 +30,6 @@ val translatedLevelConditions = mapOf(
     LevelConditions.HEXAGON to "Шестиугольник",
     LevelConditions.ARROW to "Стрелка",
     LevelConditions.RAINDROP to "Капля",
-    LevelConditions.EMPTY to ""
 )
 
 const val deffultCellSize = 20f
@@ -47,44 +45,18 @@ data class GameSettings(
 
 class AppConstants {
 
-    private var engine = GameEngine()
+    private val engine = GameEngine()
     fun getEngine() = engine
 
     private lateinit var gameSettings: GameSettings
-    private lateinit var preffs: SharedPreferences
 
-
-    var levelCondMap = mutableMapOf<LevelConditions, Boolean>()
-    var translatedLevelCondMap = mapOf<String, Boolean>()
-
-    fun setLevelConditionsList(applicationContext: Context) {
-        preffs = applicationContext.getSharedPreferences(
-            "levelConditionsPrefferences",
-            Context.MODE_PRIVATE
-        )
-        setLevelCondMap()
-        translateLevelCondMap()
-    }
-
-    private fun setLevelCondMap() {
-        levelCondMap =
-            LevelConditions.entries.associateWith { preffs.getBoolean(it.toString(), false) }
-                .toMutableMap()
-    }
-
-    private fun translateLevelCondMap() {
-        translatedLevelCondMap =
-            levelCondMap.keys.associate { translatedLevelConditions[it]!! to levelCondMap[it]!! }
-                .toMutableMap().apply { remove("") }
-    }
-
-
-    fun nextLevelCondition(prevCond: LevelConditions): LevelConditions { // TOOD Rework
-        val list = levelCondMap.toList()
-        val entryIndex = list.indexOfFirst { it.first == prevCond }
-        if ((entryIndex + 1) in list.indices)
-            return list[entryIndex + 1].first
-        return LevelConditions.EMPTY
+    var levelsList = mutableListOf<Pair<LevelConditions, Boolean>>()
+    var translatedList = listOf<Pair<String, Boolean>>()
+    fun setLevelConditionsList() {
+        levelsList = LevelConditions.entries.map { it to true }.toMutableList()
+        levelsList.removeIf { it.first == LevelConditions.EMPTY }
+        translatedList = levelsList.map { (translatedMap[it.first] ?: "") to it.second }
+        Log.d("MyTag", "$levelsList")
     }
 
     fun setGameSettings(
@@ -114,6 +86,7 @@ class AppConstants {
     fun changeState(state: GameStates) {
         currentState = state
 
+        Log.d("MyTag", "$currentState")
         if (currentState == GameStates.STATE_PLAYER_PLACE_OBJECTS)
             getEngine().restoreInitialState()
     }
@@ -127,14 +100,4 @@ class AppConstants {
             engine.resetTempObj()
         currentOption = option
     }
-
-    fun markAsCompleted(levelCondition: LevelConditions) {
-        levelCondMap[levelCondition] = true
-        translateLevelCondMap()
-        preffs.edit().apply {
-            putBoolean(levelCondition.toString(), true)
-            apply()
-        }
-    }
-
 }

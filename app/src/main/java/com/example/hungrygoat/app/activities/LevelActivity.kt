@@ -22,7 +22,7 @@ import com.example.hungrygoat.constants.GameStates
 import com.example.hungrygoat.constants.LevelConditions
 import com.example.hungrygoat.constants.PickedOptions
 import com.example.hungrygoat.constants.SingletonAppConstantsInfo
-import com.example.hungrygoat.constants.translatedLevelConditions
+import com.example.hungrygoat.constants.translatedMap
 import com.example.hungrygoat.gameLogic.game.GameThread
 import com.example.hungrygoat.gameLogic.game.GameView
 import com.example.hungrygoat.gameLogic.interfaces.LevelCompleteListener
@@ -57,31 +57,23 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
     private var levelCondition: LevelConditions = LevelConditions.EMPTY
 
     private lateinit var gameThread: GameThread
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.level_layout)
 
-        levelCondition = getLevelCondition()
+        val extras = intent.extras
+
+        @Suppress("DEPRECATION")
+        levelCondition =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                extras?.getSerializable("levelCondition", LevelConditions::class.java)
+                    ?: LevelConditions.EMPTY
+            } else extras?.getSerializable("levelCondition") as LevelConditions
 
         setViews()
 
         appConstants = SingletonAppConstantsInfo.getAppConst()
 
-        setSettings()
-        setTimer()
-    }
-
-    @Suppress("DEPRECATION")
-    private fun getLevelCondition(): LevelConditions {
-        val extras = intent.extras
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            extras?.getSerializable("levelCondition", LevelConditions::class.java)
-                ?: LevelConditions.EMPTY
-        } else extras?.getSerializable("levelCondition") as LevelConditions
-    }
-
-    private fun setSettings() {
         val s1 = resources.getString(R.string.pick_cell_size)
         val s2 = resources.getString(R.string.enableDrawCellIndex)
         val s3 = resources.getString(R.string.enableDrawRopeNodes)
@@ -103,6 +95,7 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
                 getBoolean(s5, false)
             )
         }
+        setTimer()
     }
 
     override fun onResume() {
@@ -127,24 +120,16 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
         appConstants.getEngine().killEngine()
     }
 
-    private fun resetGame() {
-        levelCondition = appConstants.nextLevelCondition(levelCondition)
-        gameThread.changeLevelCondition(levelCondition)
-
-        resetCanvas()
-
-        updateTimer(GameStates.STATE_PLAYER_PLACE_OBJECTS, true)
-        levelCondImgButton.callOnClick()
-    }
 
     override fun onLevelComplete() {
-        appConstants
-        val negClickListener = { appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS) }
+        val negClickListener = { }
         val posClickListener = {
-            appConstants.markAsCompleted(levelCondition)
-            resetGame()
+            Toast.makeText(
+                applicationContext,
+                "Следующий уровень будет потом",
+                Toast.LENGTH_SHORT
+            ).show()
         }
-
         createDialog(
             GameDialog(),
             "Уровень закончен.",
@@ -157,9 +142,9 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
     }
 
     override fun onLevelFailed() {
+        Log.d("MyTag", "Level Failed!")
         val negClickListener = { resetCanvas() }
         val posClickListener = {
-            appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
             Toast.makeText(
                 applicationContext,
                 "Не расстривайся!",
@@ -175,6 +160,53 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
             negClickListener,
             posClickListener
         )
+    }
+
+    private fun setViews() {
+        backImgButton = findViewById(R.id.backImgButton)
+        levelCondImgButton = findViewById(R.id.levelConditionImgButton)
+        clearCanvasImgButton = findViewById(R.id.clearCanvasImgButton)
+        playImgButton = findViewById(R.id.playImgButton)
+        timeTextView = findViewById(R.id.timeTextView)
+
+        val ll = findViewById<LinearLayout>(R.id.levelLinearLayout)
+
+        gameView = GameView(applicationContext)
+        gameView.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { weight = 1f }
+        ll.addView(gameView)
+
+        ll.addView(
+            getButtonsLinearLayout(
+                5,
+                listOf("Колышек", "Верёвка", "Коза", "Собака", "Ластик")
+            )
+        )
+
+        backImgButton.setOnClickListener(this)
+        levelCondImgButton.setOnClickListener(this)
+        clearCanvasImgButton.setOnClickListener(this)
+        playImgButton.setOnClickListener(this)
+    }
+
+    private fun setTimer() {
+        timer = object : CountUpTimer(duration) {
+            @SuppressLint("SetTextI18n")
+            override fun onTick(second: Int) {
+                val curTime = lastTime + second
+                timeTextView.text = "$curTime сек."
+            }
+
+            override fun onFinish() {
+                super.onFinish()
+                lastTime += (duration / 1000)
+                timer.start()
+            }
+        }
+
+        updateTimer(GameStates.STATE_PLAYER_PLACE_OBJECTS, false)
     }
 
     private fun createDialog(
@@ -202,65 +234,6 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
         transaction.commit()
     }
 
-    private fun setViews() {
-        fun setListeners() {
-            backImgButton.setOnClickListener(this)
-            levelCondImgButton.setOnClickListener(this)
-            clearCanvasImgButton.setOnClickListener(this)
-            playImgButton.setOnClickListener(this)
-        }
-
-        fun findViews() {
-            backImgButton = findViewById(R.id.backImgButton)
-            levelCondImgButton = findViewById(R.id.levelConditionImgButton)
-            clearCanvasImgButton = findViewById(R.id.clearCanvasImgButton)
-            playImgButton = findViewById(R.id.playImgButton)
-            timeTextView = findViewById(R.id.timeTextView)
-
-        }
-
-
-        setContentView(R.layout.level_layout)
-
-        findViews()
-        setListeners()
-
-        val ll = findViewById<LinearLayout>(R.id.levelLinearLayout)
-
-        gameView = GameView(applicationContext)
-        gameView.layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { weight = 1f }
-        ll.addView(gameView)
-
-        ll.addView(
-            getButtonsLinearLayout(
-                5,
-                listOf("Колышек", "Верёвка", "Коза", "Собака", "Ластик")
-            )
-        )
-
-    }
-
-    private fun setTimer() {
-        timer = object : CountUpTimer(duration) {
-            @SuppressLint("SetTextI18n")
-            override fun onTick(second: Int) {
-                val curTime = lastTime + second
-                timeTextView.text = "$curTime сек."
-            }
-
-            override fun onFinish() {
-                super.onFinish()
-                lastTime += (duration / 1000)
-                timer.start()
-            }
-        }
-
-        updateTimer(GameStates.STATE_PLAYER_PLACE_OBJECTS, false)
-    }
-
     private fun updateTimer(state: GameStates, resetTimer: Boolean) {
         lastTime = if (resetTimer) 0 else lastTime
         if (state == GameStates.STATE_OBJECTS_MOVING) {
@@ -270,7 +243,7 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
         } else timer.start()
     }
 
-    private fun resetButtons(buttons: List<Button>, i: Int) {
+    private fun resetButtons(buttons: MutableList<Button>, i: Int) {
         buttons.forEach {
             it.background = defaultBackgroundDrawable
         }
@@ -338,13 +311,6 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
         return buttonsPaneLinearLayout
     }
 
-    fun changeState(): GameStates {
-        return if (appConstants.getState() == GameStates.STATE_PLAYER_PLACE_OBJECTS)
-            GameStates.STATE_OBJECTS_MOVING
-        else
-            GameStates.STATE_PLAYER_PLACE_OBJECTS
-    }
-
     override fun onClick(view: View?) =
         when (view?.id) {
             R.id.backImgButton -> {
@@ -360,7 +326,7 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
                 createDialog(
                     GameDialog(),
                     "Условие уровня:",
-                    "${translatedLevelConditions[levelCondition]}",
+                    "${translatedMap[levelCondition]}",
                     "Не круто :(",
                     "Круто!", {}, {}
                 )
@@ -369,7 +335,11 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
             R.id.clearCanvasImgButton -> resetCanvas()
 
             R.id.playImgButton -> {
-                val currentState = changeState()
+                val currentState =
+                    if (appConstants.getState() == GameStates.STATE_PLAYER_PLACE_OBJECTS)
+                        GameStates.STATE_OBJECTS_MOVING
+                    else
+                        GameStates.STATE_PLAYER_PLACE_OBJECTS
 
                 updateTimer(currentState, false)
                 appConstants.changeState(currentState)

@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.hungrygoat.R
 import com.example.hungrygoat.app.helpers.RecyclerViewAdapter.OnItemClickListener
 
-class RecyclerViewAdapter(private val levels: Map<String, Boolean>) :
+class RecyclerViewAdapter(private val levels: List<Pair<String, Boolean>>) :
     RecyclerView.Adapter<RecyclerViewAdapter.MyViewHolder>() {
 
     private var clickListener: OnItemClickListener = OnItemClickListener { }
@@ -42,7 +42,7 @@ class RecyclerViewAdapter(private val levels: Map<String, Boolean>) :
     override fun getItemCount(): Int = levels.size
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        levels.toList()[position].apply {
+        levels[position].apply {
             holder.playLevelButton.text = first
             holder.levelDoneCheckBox.isChecked = second
         }
