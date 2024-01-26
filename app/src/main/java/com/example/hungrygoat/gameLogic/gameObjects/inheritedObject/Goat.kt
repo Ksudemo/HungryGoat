@@ -28,6 +28,7 @@ class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
                 path[lastVisitedIndex++].apply {
                     this@Goat.x = this.x
                     this@Goat.y = this.y
+                    lastVisitedIndex = path.size // TODO remove after test
                 }
             else
                 preparePath(gridHandler, dogObj)
@@ -38,7 +39,7 @@ class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
     }
 
 
-    private fun preparePath(gridHandler: GridHandler, dogObj: Dog?) {
+    fun preparePath(gridHandler: GridHandler, dogObj: Dog?) {
         path = (reachedSet - ((dogObj?.reachedSet ?: emptySet()).toSet())).toList()
         pathSetted = true
         Log.d("mytag", "goat path size - ${path.size}")

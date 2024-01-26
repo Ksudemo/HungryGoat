@@ -1,5 +1,6 @@
 package com.example.hungrygoat.gameLogic.game
 
+import android.graphics.Canvas
 import android.graphics.Paint
 import android.os.HandlerThread
 import android.view.SurfaceHolder
@@ -12,12 +13,11 @@ import com.example.hungrygoat.gameLogic.interfaces.LevelFailedListener
 class GameThread(
     private val surfaceHolder: SurfaceHolder,
     threadName: String,
-    private val levelCondition: LevelConditions,
+    private var levelCondition: LevelConditions,
 ) : HandlerThread(threadName) {
 
     private var backgroundPaint: Paint = Paint()
 
-    private var engineInitialized = false
     private var isRunning: Boolean = true
 
     private var solutionNotChecked = true
@@ -39,22 +39,13 @@ class GameThread(
     }
 
     override fun run() {
+        val appC = SingletonAppConstantsInfo.getAppConst()
+        val engine = appC.getEngine()
+        var canvas: Canvas
         while (isRunning) {
-            val appC = SingletonAppConstantsInfo.getAppConst()
-
-            val canvas = surfaceHolder.lockCanvas(null) ?: return
-
-            val engine = appC.getEngine()
-            if (!engineInitialized || appC.orientationChanged) {
-                appC.orientationChanged = false
-                engineInitialized = true
-
-                engine.setGrid(
-                    canvas.width,
-                    canvas.height,
-                    appC.getSetttings().gridHandlerCellSize
-                )
-            }
+            canvas = surfaceHolder.lockCanvas(null) ?: return
+            if (appC.orientationChanged)
+                appC.initEngine(canvas.width, canvas.height)
 
             when (appC.getState()) {
                 GameStates.STATE_OBJECTS_MOVING -> {
@@ -79,18 +70,9 @@ class GameThread(
             }
 
             synchronized(surfaceHolder) {
-                canvas.drawRect(
-                    0f,
-                    0f,
-                    canvas.width.toFloat(),
-                    canvas.height.toFloat(),
-                    backgroundPaint
-                )
-
                 engine.draw(canvas)
+                surfaceHolder.unlockCanvasAndPost(canvas)
             }
-
-            surfaceHolder.unlockCanvasAndPost(canvas)
         }
     }
 
@@ -100,5 +82,9 @@ class GameThread(
 
     fun stopThread() {
         isRunning = false
+    }
+
+    fun changeLevelCondition(lc: LevelConditions) {
+        levelCondition = lc
     }
 }

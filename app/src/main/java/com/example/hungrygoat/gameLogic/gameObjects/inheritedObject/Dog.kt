@@ -27,6 +27,9 @@ class Dog(x: Float, y: Float, tag: GameObjectTags) :
                     this@Dog.x = this.x
                     this@Dog.y = this.y
                 }
+
+                if (lastVisitedIndex == path.size)
+                    lastVisitedIndex = 0
             }
         }
 

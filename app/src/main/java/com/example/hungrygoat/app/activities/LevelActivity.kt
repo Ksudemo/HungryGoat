@@ -61,19 +61,25 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
         super.onCreate(savedInstanceState)
         setContentView(R.layout.level_layout)
 
-        val extras = intent.extras
-
-        @Suppress("DEPRECATION")
-        levelCondition =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                extras?.getSerializable("levelCondition", LevelConditions::class.java)
-                    ?: LevelConditions.EMPTY
-            } else extras?.getSerializable("levelCondition") as LevelConditions
-
         setViews()
 
+        levelCondition = getLevelCondition()
         appConstants = SingletonAppConstantsInfo.getAppConst()
 
+        setSettings()
+        setTimer()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun getLevelCondition(): LevelConditions {
+        val extras = intent.extras
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            extras?.getSerializable("levelCondition", LevelConditions::class.java)
+                ?: LevelConditions.EMPTY
+        } else extras?.getSerializable("levelCondition") as LevelConditions
+    }
+
+    private fun setSettings() {
         val s1 = resources.getString(R.string.pick_cell_size)
         val s2 = resources.getString(R.string.enableDrawCellIndex)
         val s3 = resources.getString(R.string.enableDrawRopeNodes)
@@ -95,7 +101,6 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
                 getBoolean(s5, false)
             )
         }
-        setTimer()
     }
 
     override fun onResume() {
@@ -121,17 +126,36 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
     }
 
 
+    private fun resetGame() {
+        val newCond = appConstants.nextLevelCondition(levelCondition)
+        if (newCond == null) {
+            createDialog(
+                "Поздравляю, вы прошли все уровни!",
+                "Включить первый уровень?",
+                "Нет",
+                "Да",
+                {},
+                { levelCondition = appConstants.levelsMap.keys.first().levelCondition }
+            )
+        } else
+            levelCondition = newCond
+
+        gameThread.changeLevelCondition(levelCondition)
+
+        resetCanvas()
+
+        updateTimer(GameStates.STATE_PLAYER_PLACE_OBJECTS, true)
+        levelCondImgButton.callOnClick()
+    }
+
     override fun onLevelComplete() {
-        val negClickListener = { }
+        appConstants
+        val negClickListener = { appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS) }
         val posClickListener = {
-            Toast.makeText(
-                applicationContext,
-                "Следующий уровень будет потом",
-                Toast.LENGTH_SHORT
-            ).show()
+            resetGame()
         }
+
         createDialog(
-            GameDialog(),
             "Уровень закончен.",
             "Вы прошли уровень за $lastTime сек.",
             "Повторить",
@@ -142,9 +166,9 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
     }
 
     override fun onLevelFailed() {
-        Log.d("MyTag", "Level Failed!")
         val negClickListener = { resetCanvas() }
         val posClickListener = {
+            appConstants.changeState(GameStates.STATE_PLAYER_PLACE_OBJECTS)
             Toast.makeText(
                 applicationContext,
                 "Не расстривайся!",
@@ -152,7 +176,6 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
             ).show()
         }
         createDialog(
-            GameDialog(),
             "Неудачная попытка.",
             "Вы не прошли уровень",
             "Сбросить всё",
@@ -163,14 +186,24 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
     }
 
     private fun setViews() {
-        backImgButton = findViewById(R.id.backImgButton)
-        levelCondImgButton = findViewById(R.id.levelConditionImgButton)
-        clearCanvasImgButton = findViewById(R.id.clearCanvasImgButton)
-        playImgButton = findViewById(R.id.playImgButton)
-        timeTextView = findViewById(R.id.timeTextView)
+        fun setListeners() {
+            backImgButton.setOnClickListener(this)
+            levelCondImgButton.setOnClickListener(this)
+            clearCanvasImgButton.setOnClickListener(this)
+            playImgButton.setOnClickListener(this)
+        }
 
+        fun findViews() {
+            backImgButton = findViewById(R.id.backImgButton)
+            levelCondImgButton = findViewById(R.id.levelConditionImgButton)
+            clearCanvasImgButton = findViewById(R.id.clearCanvasImgButton)
+            playImgButton = findViewById(R.id.playImgButton)
+            timeTextView = findViewById(R.id.timeTextView)
+            setListeners()
+        }
+
+        findViews()
         val ll = findViewById<LinearLayout>(R.id.levelLinearLayout)
-
         gameView = GameView(applicationContext)
         gameView.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -184,11 +217,6 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
                 listOf("Колышек", "Верёвка", "Коза", "Собака", "Ластик")
             )
         )
-
-        backImgButton.setOnClickListener(this)
-        levelCondImgButton.setOnClickListener(this)
-        clearCanvasImgButton.setOnClickListener(this)
-        playImgButton.setOnClickListener(this)
     }
 
     private fun setTimer() {
@@ -210,7 +238,6 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
     }
 
     private fun createDialog(
-        dialog: GameDialog,
         titleString: String,
         textString: String,
         negString: String,
@@ -218,6 +245,7 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
         negClickListener: GameDialog.OnClickListener,
         posClickListener: GameDialog.OnClickListener,
     ) {
+        val dialog = GameDialog()
         val manager = supportFragmentManager
         val transaction = manager.beginTransaction()
 
@@ -243,7 +271,7 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
         } else timer.start()
     }
 
-    private fun resetButtons(buttons: MutableList<Button>, i: Int) {
+    private fun resetButtons(buttons: List<Button>, i: Int) {
         buttons.forEach {
             it.background = defaultBackgroundDrawable
         }
@@ -324,12 +352,12 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, LevelCompleteLi
 
             R.id.levelConditionImgButton -> {
                 createDialog(
-                    GameDialog(),
                     "Условие уровня:",
                     "${translatedMap[levelCondition]}",
                     "Не круто :(",
-                    "Круто!", {}, {}
-                )
+                    "Круто!",
+                    {}
+                ) {}
             }
 
             R.id.clearCanvasImgButton -> resetCanvas()

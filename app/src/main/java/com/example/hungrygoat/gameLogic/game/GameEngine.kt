@@ -2,6 +2,7 @@ package com.example.hungrygoat.gameLogic.game
 
 import android.graphics.Canvas
 import android.util.Log
+import android.view.MotionEvent
 import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.constants.GameStates
 import com.example.hungrygoat.constants.LevelConditions
@@ -16,7 +17,8 @@ import com.example.hungrygoat.gameLogic.services.GridHandler
 import com.example.hungrygoat.gameLogic.services.InputHandler
 import com.example.hungrygoat.gameLogic.services.PhysicService
 import com.example.hungrygoat.gameLogic.services.RenderService
-import com.example.hungrygoat.gameLogic.services.SolutionService
+import com.example.hungrygoat.gameLogic.services.solution.SolutionService
+import kotlin.system.measureTimeMillis
 
 class GameEngine {
 
@@ -36,13 +38,22 @@ class GameEngine {
         var ruler = mutableListOf<List<Any>>()
 
         private var tempWhileMove: GameObject? = null
-
         fun getObjects() = objects
         fun getRopes() = ropes
     }
 
     fun setGrid(w: Int, h: Int, cellSize: Float) {
-        gridHandler.setGrid(w, h, cellSize)
+        var time = measureTimeMillis {
+            gridHandler.setGrid(w, h, cellSize)
+        }
+        Log.d("mytag", "time grid to create - $time")
+//        time = measureTimeMillis {
+//            createNewObject(352.5f, 1102.5f, PickedOptions.PEG)
+//            createNewObject(607.5f, 947.5f, PickedOptions.GOAT)
+//            createNewObject(352.5f, 1102.5f, PickedOptions.ROPE)
+//            createNewObject(607.5f, 947.5f, PickedOptions.ROPE)
+//        }
+//        Log.d("mytag", "time to setup circle - $time")
     }
 
     fun clearObjects() {
@@ -64,7 +75,7 @@ class GameEngine {
         when {
             goat == null || goat?.bounds?.isEmpty() == true -> false
             else ->
-                solutionService.checkSolution(goat!!, gridHandler, levelCondition)
+                solutionService.checkSolution(goat!!, dog, gridHandler, levelCondition)
         }
 
     fun update() {
@@ -88,40 +99,38 @@ class GameEngine {
             SingletonAppConstantsInfo.appConstants.getSetttings()
         )
 
-    fun createNewObject(x: Float, y: Float, pickedOption: PickedOptions) {
-        val appState = SingletonAppConstantsInfo.getAppConst()
-            .getState()
-        if (appState == GameStates.STATE_PLAYER_PLACE_OBJECTS) {
-            if (pickedOption == PickedOptions.ERASER) eraseObject(x, y)
-            val createdObject =
-                gameObjectFactory.createNewObject(
-                    x, y, objects.find { it.isTempOnRopeSet }, pickedOption, gridHandler
-                )
-            tempWhileMove = null
-            ruler.clear()
-            handleCreatedObject(createdObject ?: return)
+
+    fun handleTouch(
+        event: MotionEvent,
+        pickedOption: PickedOptions,
+        state: GameStates,
+    ) =
+        if (state == GameStates.STATE_PLAYER_PLACE_OBJECTS) {
+            val x = event.x
+            val y = event.y
+            when (event.action) {
+                MotionEvent.ACTION_UP -> createNewObject(x, y, pickedOption)
+                MotionEvent.ACTION_MOVE -> tempCreateNewObjectOnMove(x, y, pickedOption)
+                else -> null
+            }
+        } else null
+
+    private fun createNewObject(x: Float, y: Float, pickedOption: PickedOptions) {
+        when (pickedOption) {
+            PickedOptions.ERASER -> eraseObject(x, y)
+            else -> {
+                val createdObject =
+                    gameObjectFactory.createNewObject(
+                        x, y, objects.find { it.isTempOnRopeSet }, pickedOption, gridHandler
+                    )
+                handleCreatedObject(createdObject ?: return)
+            }
         }
+        tempWhileMove = null
+        ruler.clear()
     }
 
-    private fun eraseObject(x: Float, y: Float) {
-        val clickedObject = InputHandler().getClickedObject(objects, x, y)
-
-        if (clickedObject != null)
-            removeFromObjects(clickedObject)
-        else {
-            val clickedRope =
-                InputHandler().getClickedRopeNodeObject(
-                    ropes, x, y
-                ).firstOrNull()?.baseRope
-            removeFromRopes(clickedRope)
-        }
-    }
-
-    fun tempCreateNewObjectOnMove(x: Float, y: Float, pickedOption: PickedOptions) {
-        if (SingletonAppConstantsInfo.getAppConst().getState()
-            != GameStates.STATE_PLAYER_PLACE_OBJECTS
-        ) return
-
+    private fun tempCreateNewObjectOnMove(x: Float, y: Float, pickedOption: PickedOptions) {
         ruler.clear()
 
         if (tempWhileMove != null && tempWhileMove?.gameObjectTag.toString() == pickedOption.toString()) {
@@ -139,6 +148,20 @@ class GameEngine {
                 gameObjectFactory.createNewObject(
                     x, y, objects.find { it.isTempOnRopeSet }, pickedOption, gridHandler
                 ) ?: return
+    }
+
+    private fun eraseObject(x: Float, y: Float) {
+        val clickedObject = InputHandler().getClickedObject(objects, x, y)
+
+        if (clickedObject != null)
+            removeFromObjects(clickedObject)
+        else {
+            val clickedRope =
+                InputHandler().getClickedRopeNodeObject(
+                    ropes, x, y
+                ).firstOrNull()?.baseRope
+            removeFromRopes(clickedRope)
+        }
     }
 
     private fun handleCreatedObject(createdObject: GameObject) =
@@ -159,6 +182,10 @@ class GameEngine {
         else if (isGoat)
             goat?.attachRope(rope)
 
+        Log.d(
+            "mytag",
+            "isTiedToRope = ${rope.isTiedToRope}\n from = ${rope.objectFrom}\n to = ${rope.objectTo}"
+        )
         ropes.add(rope)
     }
 
@@ -166,7 +193,6 @@ class GameEngine {
         val isDog = isObjADog(obj)
         val isGoat = isObjAGoat(obj)
 
-        Log.d("mytag", "isGoat = $isGoat\n !obj.isTempOnRopeSet = ${!obj.isTempOnRopeSet}")
         if ((isDog || isGoat) && !obj.isTempOnRopeSet) {
             removeFromObjects(obj)
 
@@ -237,11 +263,6 @@ class GameEngine {
 
 
     fun killEngine() {
-        Log.d(
-            "mytag",
-            "getDistance calls:\n ${gridHandler.testMap}\n"
-        )
-        gridHandler.testMap.clear()
 //        clearObjects()
 //        gridHandler.freeGrid()
     }

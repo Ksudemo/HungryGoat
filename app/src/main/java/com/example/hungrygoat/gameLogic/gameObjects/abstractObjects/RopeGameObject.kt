@@ -10,11 +10,11 @@ abstract class RopeGameObject(
     tg: GameObjectTags,
 ) : GameObject(objectFrom.x, objectFrom.y, tg) {
 
-    var ropeReachedSet: HashSet<Cell> = hashSetOf()
+    var ropeReachedSet: Set<Cell> = mutableSetOf()
     val ropeNodes: HashSet<RopeNode> = hashSetOf()
     val attachedRopes: HashSet<Rope> = hashSetOf()
     fun remove() {
         ropeNodes.clear()
-        ropeReachedSet.clear()
+//        ropeReachedSet.clear()
     }
 }

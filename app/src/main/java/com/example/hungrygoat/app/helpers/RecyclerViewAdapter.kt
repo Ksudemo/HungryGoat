@@ -8,11 +8,16 @@ import android.widget.CheckBox
 import androidx.recyclerview.widget.RecyclerView
 import com.example.hungrygoat.R
 import com.example.hungrygoat.app.helpers.RecyclerViewAdapter.OnItemClickListener
+import com.example.hungrygoat.constants.LevelCondTranslated
 
-class RecyclerViewAdapter(private val levels: List<Pair<String, Boolean>>) :
+class RecyclerViewAdapter() :
     RecyclerView.Adapter<RecyclerViewAdapter.MyViewHolder>() {
 
     private var clickListener: OnItemClickListener = OnItemClickListener { }
+    private var levels: Map<LevelCondTranslated, Boolean> = mapOf()
+    fun setData(newLevels: Map<LevelCondTranslated, Boolean>) {
+        levels = newLevels
+    }
 
     fun interface OnItemClickListener {
         fun onItemClick(position: Int)
@@ -42,8 +47,8 @@ class RecyclerViewAdapter(private val levels: List<Pair<String, Boolean>>) :
     override fun getItemCount(): Int = levels.size
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        levels[position].apply {
-            holder.playLevelButton.text = first
+        levels.toList()[position].apply {
+            holder.playLevelButton.text = first.translatedLevelCondition
             holder.levelDoneCheckBox.isChecked = second
         }
 

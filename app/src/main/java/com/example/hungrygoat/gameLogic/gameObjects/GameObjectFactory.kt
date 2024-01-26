@@ -48,14 +48,18 @@ class GameObjectFactory {
                     val clickedGameObject =
                         inputHandler.getClickedObject(GameEngine.getObjects(), clickedX, clickedY)
                             ?: nodes.firstOrNull()
-                    if (clickedGameObject == null || clickedGameObject == tempObj) return null
+                    if (clickedGameObject == null || clickedGameObject == tempObj)
+                        return null
+
                     Log.d("mytag", "tempObj = $tempObj\n clickedGameObject = $clickedGameObject")
-                    if (tempObj == null)
-                        clickedGameObject.apply {
+
+                    when (tempObj) {
+                        null -> clickedGameObject.apply {
                             isTempOnRopeSet = true
                         }
-                    else
-                        setRope(gridHandler, tempObj, clickedGameObject, nodes)
+
+                        else -> setRope(gridHandler, tempObj, clickedGameObject, nodes)
+                    }
                 }
 
                 PickedOptions.PEG -> Peg(
@@ -70,7 +74,7 @@ class GameObjectFactory {
                     GameObjectTags.GOAT,
                 ).apply {
                     movableAction {
-                        calcReachedSet(gridHandler)
+                        calcReachedSet()
                         setBoundary(gridHandler)
                     }
                     invokeAction()
@@ -82,7 +86,7 @@ class GameObjectFactory {
                     GameObjectTags.DOG
                 ).apply {
                     movableAction {
-                        calcReachedSet(gridHandler)
+                        calcReachedSet()
                         setBoundary(gridHandler)
                     }
                     invokeAction()
@@ -120,10 +124,10 @@ class GameObjectFactory {
             null
         else {
             val length = gridHandler.distBetween(
-                tempObj, clickedObj,
-                "GameObjectFactory"
+                tempObj, clickedObj
             )
-            val isTiedToRope = nodes.isNotEmpty()
+            val isTiedToRope =
+                tempObj.gameObjectTag == GameObjectTags.RopeNode || clickedObj.gameObjectTag == GameObjectTags.RopeNode
             val rope = Rope(tempObj, clickedObj, isTiedToRope, length, GameObjectTags.ROPE).apply {
                 setRopeNodes()
                 setReachedSet(gridHandler)

@@ -18,14 +18,12 @@ import kotlin.system.measureTimeMillis
 class Rope(
     val objectFrom: GameObject,
     val objectTo: GameObject,
-    private val isTiedToRope: Boolean,
-    ropeLength: Float,
+    val isTiedToRope: Boolean,
+    val ropeLength: Float,
     tag: GameObjectTags,
 ) : RopeGameObject(objectFrom, tag), Draw {
 
     val color = Color.BLACK
-
-    private val maxLength = ropeLength
 
     private val isObjFromMovable =
         objectFrom.gameObjectTag == GameObjectTags.DOG || objectFrom.gameObjectTag == GameObjectTags.GOAT
@@ -47,7 +45,7 @@ class Rope(
         var maxX = 0f
         var maxY = 0f
 
-        val offset = (maxLength - cellSize / 2)
+        val offset = (ropeLength - cellSize / 2)
         when (val anchorPoint = getAnchorPoint()) {
             is Peg -> {
                 maxX = anchorPoint.x
@@ -91,11 +89,8 @@ class Rope(
 
     private fun getFilteredRanges(gridHandler: GridHandler): List<Pair<IntRange, IntRange>> {
         val (xRange, yRange) = getBoundinBoxIndecies(gridHandler)
-        Log.d(
-            "mytag",
-            "xRange = $xRange \n yRange = $yRange"
-        )
-        return listOf(xRange to yRange)
+
+        return mutableListOf(xRange to yRange)
     }
 
     fun setReachedSet(gridHandler: GridHandler) {
@@ -103,50 +98,57 @@ class Rope(
         if (!isTiedToRope && !(tiedToMovale))
             return
 
-        val grid = gridHandler.getGrid()
-        val baseRope = getRopeConnectedTo()
+        val time = measureTimeMillis {
+            val grid = gridHandler.getGrid()
+            val ropeConnectedTo = getRopeConnectedTo()
+            val anchorPoint = getAnchorPoint()
 
-        val time1 = measureTimeMillis {
-            getFilteredRanges(gridHandler).forEach { (colRange, rowRange) ->
-                for (i in colRange)
-                    for (j in rowRange)
-                        if (canRopeReachCell(gridHandler, baseRope, grid[i][j]))
-                            ropeReachedSet.add(grid[i][j])
+            val res = mutableSetOf<Cell>()
+            getFilteredRanges(gridHandler).flatMap { (colRange, rowRange) ->
+                colRange.flatMap { i -> rowRange.map { j -> i to j } }
+            }.map { (i, j) ->
+                val cell = grid[i][j]
+                if (canRopeReachCell(gridHandler, ropeConnectedTo, anchorPoint, cell))
+                    res.add(cell)
             }
+            ropeReachedSet = res
         }
-        Log.d("mytag", "loop and call canRopeReachCell time = $time1")
+        Log.d("mytag", "rope.setReachedSet time - $time")
     }
 
     private fun canReachCell(
         gridHandler: GridHandler,
-        closest: GameObject,
-        targetCell: GameObject,
+        otherX: Float, otherY: Float,
+        cellTo: Cell,
     ): Boolean {
         return gridHandler.distBetween(
-            closest,
-            targetCell, "ropeCanReach"
-        ) <= maxLength + gridHandler.cellSize / 2
+            cellTo,
+            gridHandler.getClosestCell(otherX, otherY)
+        ) <= ropeLength + gridHandler.cellSize / 2
     }
 
     private fun canRopeReachCell(
         gridHandler: GridHandler,
         baseRope: Rope?,
+        anchor: GameObject?,
         targetCell: Cell,
     ): Boolean {
-        if (isTiedToRope && baseRope != null && baseRope.ropeNodes.any { ropeNode ->
-                val closest = gridHandler.getClosestCell(ropeNode.x, ropeNode.y) // TODO rework(?)
-                canReachCell(gridHandler, closest, targetCell)
-            })
+        val anyRopeCanReachCell = baseRope?.ropeNodes?.any { ropeNode ->
+            canReachCell(gridHandler, ropeNode.x, ropeNode.y, targetCell)
+        } ?: false
+
+        if (isTiedToRope && baseRope != null && anyRopeCanReachCell)
             return true
 
-        val anchor = getAnchorPoint() ?: return false
-        return canReachCell(gridHandler, anchor, targetCell)
+        return when (anchor) {
+            null -> false
+            else -> canReachCell(gridHandler, anchor.x, anchor.y, targetCell)
+        }
     }
 
-    private fun getAnchorPoint(): GameObject? = getRopeNode() ?: getPeg()
+    fun getAnchorPoint(): GameObject? = getRopeNode() ?: getPeg()
 
     fun isTiedToThisRope(other: Rope): Boolean {
-
         val objectFromTheSame = objectFrom == other.objectTo || objectFrom == other.objectFrom
         val objectToTheSame = objectTo == other.objectTo || objectTo == other.objectFrom
         if (!(objectFromTheSame || objectToTheSame)) return false
@@ -155,20 +157,10 @@ class Rope(
         ropeNodes.forEach {
             if (otherAnchor == it) return true
         }
-        val cond = ropeNodes.any { otherAnchor == it }
-
-
-        Log.d(
-            "mytag",
-            "objectFromTheSame = $objectFromTheSame\n objectToTheSame = $objectToTheSame\n cond = $cond "
-        )
-
-
-        return cond
+        return ropeNodes.any { otherAnchor == it }
     }
 
-
-    private fun getRopeConnectedTo(): Rope? =
+    private fun getRopeConnectedTo() =
         when (isTiedToRope) {
             true -> getRopeNode()?.baseRope
             false -> null
@@ -195,27 +187,28 @@ class Rope(
     }
 
     fun setRopeNodes() {
+        val time = measureTimeMillis {
+            val x1 = objectFrom.x
+            val y1 = objectFrom.y
 
-        val x1 = objectFrom.x
-        val y1 = objectFrom.y
+            val x2 = objectTo.x
+            val y2 = objectTo.y
 
-        val x2 = objectTo.x
-        val y2 = objectTo.y
+            val segmengLength = circleRadius * 2
+            val segmentCount = ceil(ropeLength / segmengLength).toInt()
 
-        val segmengLength = circleRadius * 2
-        val segmentCount = ceil(maxLength / segmengLength).toInt()
+            val dx = x2 - x1
+            val dy = y2 - y1
 
-        val dx = x2 - x1
-        val dy = y2 - y1
+            for (i in 1..segmentCount) {
+                val fraction = i.toFloat() / segmentCount
 
-        for (i in 1..segmentCount) {
-            val fraction = i.toFloat() / segmentCount
+                val nextX = x1 + fraction * dx
+                val nexty = y1 + fraction * dy
 
-            val nextX = x1 + fraction * dx
-            val nexty = y1 + fraction * dy
-
-            ropeNodes.add(RopeNode(this, nextX, nexty, GameObjectTags.RopeNode))
+                ropeNodes.add(RopeNode(this, nextX, nexty, GameObjectTags.RopeNode))
+            }
         }
-
+        Log.d("mytag", "rope.setRopeNodes time - $time")
     }
 }

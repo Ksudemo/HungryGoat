@@ -110,6 +110,7 @@ class RenderService {
     }
 
     private fun drawGoatBounds(canvas: Canvas, goat: Goat?) {
+
         if (goat == null) return
         val linePaint = rectPaint.apply {
             color = Color.MAGENTA
@@ -125,10 +126,10 @@ class RenderService {
                 val maxX = bounds.maxOfOrNull { it.x } ?: 0f
                 val maxY = bounds.maxOfOrNull { it.y } ?: 0f
 
-                val rightTop = bounds.find { it.x == maxX && it.y == minY }
-                val rightBot = bounds.find { it.x == maxX && it.y == maxY }
-                val leftBot = bounds.find { it.x == minX && it.y == maxY }
-                val leftTop = bounds.find { it.x == minX && it.y == minY }
+                val rT = bounds.find { it.x == maxX && it.y == minY }
+                val rB = bounds.find { it.x == maxX && it.y == maxY }
+                val lB = bounds.find { it.x == minX && it.y == maxY }
+                val lT = bounds.find { it.x == minX && it.y == minY }
 
                 val cx = (minX + maxX) / 2
                 val cy = (minY + maxY) / 2
@@ -138,10 +139,11 @@ class RenderService {
                 for (b in bounds)
                     drawCell(canvas, cell = b, paint = linePaint.apply { color = Color.BLUE })
 
-                drawCell(canvas, linePaint.apply { color = Color.RED }, rightTop)
-                drawCell(canvas, linePaint.apply { color = Color.GREEN }, rightBot)
-                drawCell(canvas, linePaint.apply { color = Color.BLUE }, leftBot)
-                drawCell(canvas, linePaint.apply { color = Color.BLACK }, leftTop)
+                canvas.drawRect(minX, maxY, maxX, minY, linePaint.apply { color = Color.GRAY })
+                drawCell(canvas, linePaint.apply { color = Color.RED }, rT)
+                drawCell(canvas, linePaint.apply { color = Color.GREEN }, rB)
+                drawCell(canvas, linePaint.apply { color = Color.BLUE }, lB)
+                drawCell(canvas, linePaint.apply { color = Color.BLACK }, lT)
                 //Draw the first cell
 //                drawCell(canvas, linePaint.apply { color = Color.RED }, bounds.first())
             }

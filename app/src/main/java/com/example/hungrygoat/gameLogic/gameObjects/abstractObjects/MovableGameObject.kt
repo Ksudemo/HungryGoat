@@ -15,7 +15,7 @@ abstract class MovableGameObject(
     GameObject(vx, vy, tg) {
 
     private val attachedRopeActions = mutableListOf<() -> Unit>()
-    private val attachedRopes = mutableListOf<Rope>()
+    val attachedRopes = mutableListOf<Rope>()
 
     protected val updatePerFrame = 100
     var hadAvailableCells = true
@@ -54,25 +54,31 @@ abstract class MovableGameObject(
         y = vy
     }
 
-    fun calcReachedSet(gridHandler: GridHandler) {
+    fun calcReachedSet() {
         val time = measureTimeMillis {
             reachedSet = if (attachedRopes.isEmpty())
-                gridHandler.getGrid().flatten().toHashSet()
-            else
-                attachedRopes.map { it.ropeReachedSet }
-                    .reduce { acc, set -> acc.intersect(set).toHashSet() }
+                hashSetOf()
+//                gridHandler.getGrid().flatten().toHashSet()
+            else {
+                var res = attachedRopes.first().ropeReachedSet
+                for (rope in attachedRopes)
+                    res = res.intersect(rope.ropeReachedSet)
+
+
+                res.toHashSet()
+            }
         }
-        Log.d("mytag", "reachedSet calculated for $time ")
+        Log.d("mytag", "movable reachedSet calculated for $time ")
     }
 
     fun setBoundary(gridHandler: GridHandler) {
         val time = measureTimeMillis {
             bounds =
-                gridHandler.getBoundaryCells(reachedSet) // temp.sortedBy { angleBetween(center, it) })
+                gridHandler.getBoundaryCells(reachedSet)
         }
         Log.d(
             "mytag",
-            "bouds size = ${bounds.size}\nreached set size = ${reachedSet.size}, \n time for calc bounds = $time"
+            "bounds size = ${bounds.size}\nreached set size = ${reachedSet.size}, \n time for calc bounds = $time"
         )
     }
 

@@ -1,6 +1,7 @@
 package com.example.hungrygoat.constants
 
-import android.util.Log
+import android.content.Context
+import android.content.SharedPreferences
 import com.example.hungrygoat.gameLogic.game.GameEngine
 
 object SingletonAppConstantsInfo {
@@ -43,20 +44,64 @@ data class GameSettings(
     var drawDogBounds: Boolean = false,
 )
 
+data class LevelCondTranslated(
+    val levelCondition: LevelConditions,
+    val translatedLevelCondition: String,
+)
+
 class AppConstants {
 
     private val engine = GameEngine()
     fun getEngine() = engine
+    fun initEngine(w: Int, h: Int) {
+        orientationChanged = false
+
+        engine.setGrid(
+            w,
+            h,
+            getSetttings().gridHandlerCellSize
+        )
+    }
 
     private lateinit var gameSettings: GameSettings
+    private lateinit var levelConditionPreferences: SharedPreferences
 
-    var levelsList = mutableListOf<Pair<LevelConditions, Boolean>>()
-    var translatedList = listOf<Pair<String, Boolean>>()
-    fun setLevelConditionsList() {
-        levelsList = LevelConditions.entries.map { it to true }.toMutableList()
-        levelsList.removeIf { it.first == LevelConditions.EMPTY }
-        translatedList = levelsList.map { (translatedMap[it.first] ?: "") to it.second }
-        Log.d("MyTag", "$levelsList")
+    var levelsMap: MutableMap<LevelCondTranslated, Boolean> = mutableMapOf()
+
+    fun resetLevelsMap() {
+        levelConditionPreferences.edit().apply {
+            levelsMap.forEach {
+                val key = it.key
+                putBoolean(key.levelCondition.toString(), false)
+                levelsMap[key] = false
+            }
+        }.apply()
+    }
+
+    fun setLevelConditionsList(context: Context) {
+        levelConditionPreferences =
+            context.getSharedPreferences("LevelConditionPrefs", Context.MODE_PRIVATE)
+
+        levelsMap = LevelConditions.entries.mapNotNull {
+            if (translatedMap.containsKey(it)) LevelCondTranslated(
+                it,
+                translatedMap[it]!!
+            )
+            else null
+        }.associateWith {
+            levelConditionPreferences.getBoolean(it.levelCondition.toString(), false)
+        }.toMutableMap()
+    }
+
+    fun nextLevelCondition(lc: LevelConditions): LevelConditions? {
+        levelConditionPreferences.edit().putBoolean(lc.toString(), true).apply()
+        levelsMap[levelsMap.keys.find { it.levelCondition == lc }!!] = true
+        levelsMap.toList().apply {
+            val index = indexOfFirst { it.first.levelCondition == lc }
+            return if (index + 1 in this.indices)
+                this[index + 1].first.levelCondition
+            else null
+        }
     }
 
     fun setGameSettings(
@@ -86,7 +131,6 @@ class AppConstants {
     fun changeState(state: GameStates) {
         currentState = state
 
-        Log.d("MyTag", "$currentState")
         if (currentState == GameStates.STATE_PLAYER_PLACE_OBJECTS)
             getEngine().restoreInitialState()
     }
@@ -100,4 +144,5 @@ class AppConstants {
             engine.resetTempObj()
         currentOption = option
     }
+
 }

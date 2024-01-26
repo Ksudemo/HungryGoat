@@ -41,20 +41,8 @@ class GameView(context: Context, attrs: AttributeSet? = null) :
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_UP) {
-            SingletonAppConstantsInfo.getAppConst().apply {
-                getEngine().createNewObject(
-                    event.x, event.y,
-                    getOption()!!
-                )
-            }
-        } else if (event.action == MotionEvent.ACTION_MOVE) {
-            SingletonAppConstantsInfo.getAppConst().apply {
-                getEngine().tempCreateNewObjectOnMove(
-                    event.x, event.y,
-                    getOption()!!
-                )
-            }
+        SingletonAppConstantsInfo.getAppConst().apply {
+            getEngine().handleTouch(event, getOption()!!, getState()!!)
         }
         return true
     }

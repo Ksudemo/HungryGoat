@@ -10,11 +10,7 @@ import kotlin.properties.Delegates
 
 @Suppress("unused")
 class GridHandler {
-    //    TODO Remove that variable after test
-    val testMap = mutableMapOf<String, Pair<Int, Int>>()
-
     private lateinit var grid: Array<Array<Cell>>
-
     private var distances = HashMap<Pair<Pair<Float, Float>, Pair<Float, Float>>, Float>()
 
     var cellSize by Delegates.notNull<Float>()
@@ -46,16 +42,14 @@ class GridHandler {
         grid = Array(numColumns) { i ->
             Array(numRows) { j ->
                 val rect = getRect(i, j, cellSize, cellSize)
-                Cell(rect, rect.centerX(), rect.centerY(), i, j)
+                val cell = Cell(rect, rect.centerX(), rect.centerY(), i, j)
+                cell
             }
         }
-        numColumns = grid.size
-        numRows = grid.firstOrNull()?.size ?: 0
-
         Log.v("mytag", "Cell size - $cellSize")
         Log.v(
             "mytag",
-            "Grid size - ${grid.size} * ${grid.first().size} = ${grid.size * grid.first().size}"
+            "Grid size - ${grid.size * grid.first().size}"
         )
     }
 
@@ -82,64 +76,34 @@ class GridHandler {
         return grid[i][j]
     }
 
-    fun distBetween(obj: GameObject, other: GameObject, caller: String): Float {
-        testMap.compute(caller) { _, value ->
-            if (value == null)
-                Pair(1, 0)
-            else {
-                Pair(value.first + 1, value.second)
-            }
-        }
-
+    fun distBetween(obj: GameObject, other: GameObject): Float {
         val p1 = Pair(obj.x, obj.y)
         val p2 = Pair(other.x, other.y)
         val key = if (p1.hashCode() < p2.hashCode()) Pair(p1, p2) else Pair(p2, p1)
 
-        if (distances.containsKey(key)) {
-            testMap.compute(caller) { _, value ->
-                Pair(value!!.first, value.second + 1)
-            }
+        if (distances.containsKey(key))
             return distances[key]!!
-        }
+
         val d = PhysicService().distBetween(obj.x, obj.y, other.x, other.y)
         distances[key] = d
         return d
     }
 
-    fun getBoundaryCells(availableTargets: Set<Cell>): List<Cell> {
-        fun isBoundaryCell(avalibleTargets: Set<Cell>, cell: Cell): Boolean {
-            val cellNeighbors = cell.getNeighbors(grid)
-            return cellNeighbors.size < 8 || cellNeighbors.any { !avalibleTargets.contains(it) }
+    fun getBoundaryCells(availableTargets: HashSet<Cell>): List<Cell> {
+        fun isBoundaryCell(avalibleTargets: HashSet<Cell>, cell: Cell): Boolean {
+            cell.getNeighbours(grid).apply {
+                return this.size < 8 || this.any { !avalibleTargets.contains(it) }
+            }
         }
 
-        if (availableTargets.size == grid.size * grid.first().size) {
-            val res = mutableListOf<Cell>()
-            for (i in 0 until numColumns) {
-                res.add(grid[i][0])
-                res.add(grid[i][numRows - 1])
+        return when (availableTargets.isEmpty()) {
+            true -> {
+                (0 until numColumns).flatMap { listOf(grid[it][0], grid[it][numRows - 1]) } +
+                        (0 until numRows).flatMap { listOf(grid[0][it], grid[numColumns - 1][it]) }
             }
-            for (i in 0 until numRows) {
-                res.add(grid[0][i])
-                res.add(grid[numColumns - 1][i])
-            }
-            return res
+
+            false -> availableTargets.filter { isBoundaryCell(availableTargets, it) }
         }
-
-        val minX =
-            availableTargets.minOfOrNull { it.x } ?: 0f
-        val minY =
-            availableTargets.minOfOrNull { it.y } ?: 0f
-        val maxX =
-            availableTargets.maxOfOrNull { it.x } ?: 0f
-        val maxY =
-            availableTargets.maxOfOrNull { it.y } ?: 0f
-
-        val filteredTargets =
-            availableTargets.filter {
-                it.x in (minX..maxX) && it.y in (minY..maxY)
-            }.toSet()
-
-        return filteredTargets.filter { isBoundaryCell(filteredTargets, it) }
     }
 
     fun freeGrid() {
