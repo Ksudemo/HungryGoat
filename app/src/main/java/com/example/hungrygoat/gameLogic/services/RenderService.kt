@@ -12,6 +12,8 @@ import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Dog
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
+import com.example.hungrygoat.gameLogic.services.grid.GameGrid
+import com.example.hungrygoat.gameLogic.services.grid.GridHandler
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -25,6 +27,32 @@ class RenderService {
     private val rectPaint = setPaint().apply {
         color = Color.BLACK
         strokeWidth = .5f
+        style = Paint.Style.STROKE
+    }
+    private val linePaint = rectPaint.apply {
+        color = Color.MAGENTA
+        style = Paint.Style.STROKE
+        strokeWidth = 4f
+    }
+    private val rulerPaint: Paint = Paint().apply {
+        color = Color.BLACK
+        style = Paint.Style.STROKE
+        strokeWidth = 10f
+        pathEffect = DashPathEffect(floatArrayOf(10f, 10f), 0f)
+    }
+    private val dogBoundsPaint = rectPaint.apply {
+        color = Color.LTGRAY
+        style = Paint.Style.FILL_AND_STROKE
+    }
+    private val goatBoundsPaint = linePaint.apply { color = Color.BLUE }
+    private val goatPathPaint = rectPaint.apply {
+        color = goatVisitedColor
+        style = Paint.Style.FILL_AND_STROKE
+    }
+
+    private val textPaint = paint.apply {
+        color = Color.BLACK
+        textSize = 80f
         style = Paint.Style.STROKE
     }
 
@@ -66,14 +94,6 @@ class RenderService {
 
 
     private fun drawRuler(canvas: Canvas, ruller: List<List<Any>>) {
-        val rulerPaint: Paint = Paint().apply {
-            color = Color.BLACK
-            style = Paint.Style.STROKE
-            strokeWidth = 10f
-            pathEffect = DashPathEffect(floatArrayOf(10f, 10f), 0f)
-        }
-
-
         ruller.forEach {
             val a = it[0] as GameObject
             val b = it[1] as GameObject
@@ -92,32 +112,19 @@ class RenderService {
     private fun drawDogBounds(canvas: Canvas, dog: Dog?) {
         if (dog == null) return
         dog.bounds.forEach {
-            drawCell(canvas, rectPaint.apply {
-                color = Color.LTGRAY
-                style = Paint.Style.FILL_AND_STROKE
-            }, it)
+            drawCell(canvas, dogBoundsPaint, it)
         }
     }
 
     private fun drawGoatPath(canvas: Canvas, goat: Goat?) {
         if (goat != null && goat.path.isNotEmpty())
             for (i in 0 until goat.lastVisitedIndex) {
-                drawCell(canvas, rectPaint.apply {
-                    color = goatVisitedColor
-                    style = Paint.Style.FILL_AND_STROKE
-                }, goat.path[i])
+                drawCell(canvas, goatPathPaint, goat.path[i])
             }
     }
 
     private fun drawGoatBounds(canvas: Canvas, goat: Goat?) {
-
         if (goat == null) return
-        val linePaint = rectPaint.apply {
-            color = Color.MAGENTA
-            style = Paint.Style.STROKE
-            strokeWidth = 4f
-        }
-
         try {
             val bounds = goat.bounds
             if (bounds.isNotEmpty()) {
@@ -137,7 +144,7 @@ class RenderService {
 
                 canvas.drawCircle(cx, cy, r, linePaint.apply { color = Color.WHITE })
                 for (b in bounds)
-                    drawCell(canvas, cell = b, paint = linePaint.apply { color = Color.BLUE })
+                    drawCell(canvas, cell = b, paint = goatBoundsPaint)
 
                 canvas.drawRect(minX, maxY, maxX, minY, linePaint.apply { color = Color.GRAY })
                 drawCell(canvas, linePaint.apply { color = Color.RED }, rT)
@@ -177,24 +184,21 @@ class RenderService {
             Log.e("mytag", "RenderService.drawRopeNodes() ${e.printStackTrace()}")
         }
 
-    private fun drawCellIndex(canvas: Canvas, grid: Array<Array<Cell>>) {
-        for (i in grid.indices)
-            for (j in grid[i].indices) {
+    private fun drawCellIndex(canvas: Canvas, grid: GameGrid) {
+        for (i in 0 until grid.numCols)
+            for (j in 0 until grid.numRows) {
                 drawCell(
                     canvas,
                     rectPaint.apply { style = Paint.Style.STROKE },
-                    grid[i][j]
+                    grid[i, j]
                 )
 
                 canvas.drawText(
                     "$i ; $j",
-                    grid[i][j].x - 60,
-                    grid[i][j].y + 10,
-                    paint.apply {
-                        color = Color.BLACK
-                        textSize = 80f
-                        style = Paint.Style.STROKE
-                    })
+                    grid[i, j].x - 60,
+                    grid[i, j].y + 10,
+                    textPaint
+                )
             }
     }
 

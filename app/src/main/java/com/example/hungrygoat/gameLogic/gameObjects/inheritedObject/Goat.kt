@@ -8,7 +8,7 @@ import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.MovableGameObject
 import com.example.hungrygoat.gameLogic.interfaces.Draw
 import com.example.hungrygoat.gameLogic.interfaces.GoatUpdate
-import com.example.hungrygoat.gameLogic.services.GridHandler
+import com.example.hungrygoat.gameLogic.services.grid.GridHandler
 
 class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
     MovableGameObject(vx, vy, tag), Draw, GoatUpdate {
@@ -28,7 +28,7 @@ class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
                 path[lastVisitedIndex++].apply {
                     this@Goat.x = this.x
                     this@Goat.y = this.y
-                    lastVisitedIndex = path.size // TODO remove after test
+//                    lastVisitedIndex = path.size // TODO remove after test
                 }
             else
                 preparePath(gridHandler, dogObj)
@@ -39,7 +39,7 @@ class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
     }
 
 
-    fun preparePath(gridHandler: GridHandler, dogObj: Dog?) {
+    private fun preparePath(gridHandler: GridHandler, dogObj: Dog?) {
         path = (reachedSet - ((dogObj?.reachedSet ?: emptySet()).toSet())).toList()
         pathSetted = true
         Log.d("mytag", "goat path size - ${path.size}")

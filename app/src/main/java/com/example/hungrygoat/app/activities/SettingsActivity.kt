@@ -66,12 +66,21 @@ class SettingsActivity : AppCompatActivity(), OnClickListener {
 
         val cellSizesList = mutableListOf(
             "Выберите элемент",
-            "200.0f - только для теста",
-            "100.0f - все равно большие значения, но ок(?)",
-            "50.0f - почти версия для релиза (дефолт)",
-            "20.0f - релиз",
-            "5.0f - шиза",
-            "1.0f - если че -то умрет, то ой (:"
+            "200.0f",
+            "100.0f",
+            "50.0f",
+            "20.0f",
+            "15.0f",
+            "10.0f",
+            "9.0f",
+            "8.0f",
+            "7.0f",
+            "6.0f",
+            "5.0f",
+            "4.0f",
+            "3.0f",
+            "2.0f",
+            "1.0f"
         )
 
         pickCellSizeSpinner = findViewById(R.id.pickCellSizeSpinner)

@@ -13,12 +13,11 @@ import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Dog
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
-import com.example.hungrygoat.gameLogic.services.GridHandler
 import com.example.hungrygoat.gameLogic.services.InputHandler
 import com.example.hungrygoat.gameLogic.services.PhysicService
 import com.example.hungrygoat.gameLogic.services.RenderService
+import com.example.hungrygoat.gameLogic.services.grid.GridHandler
 import com.example.hungrygoat.gameLogic.services.solution.SolutionService
-import kotlin.system.measureTimeMillis
 
 class GameEngine {
 
@@ -43,10 +42,7 @@ class GameEngine {
     }
 
     fun setGrid(w: Int, h: Int, cellSize: Float) {
-        var time = measureTimeMillis {
-            gridHandler.setGrid(w, h, cellSize)
-        }
-        Log.d("mytag", "time grid to create - $time")
+        gridHandler.setGrid(w, h, cellSize)
 //        time = measureTimeMillis {
 //            createNewObject(352.5f, 1102.5f, PickedOptions.PEG)
 //            createNewObject(607.5f, 947.5f, PickedOptions.GOAT)

@@ -7,7 +7,7 @@ import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.MovableGameObject
 import com.example.hungrygoat.gameLogic.interfaces.DogUpdate
 import com.example.hungrygoat.gameLogic.interfaces.Draw
-import com.example.hungrygoat.gameLogic.services.GridHandler
+import com.example.hungrygoat.gameLogic.services.grid.GridHandler
 
 class Dog(x: Float, y: Float, tag: GameObjectTags) :
     MovableGameObject(x, y, tag), Draw, DogUpdate {

@@ -4,7 +4,7 @@ import android.util.Log
 import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.gameLogic.game.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
-import com.example.hungrygoat.gameLogic.services.GridHandler
+import com.example.hungrygoat.gameLogic.services.grid.GridHandler
 import kotlin.system.measureTimeMillis
 
 abstract class MovableGameObject(
@@ -23,7 +23,7 @@ abstract class MovableGameObject(
     var lastVisitedIndex = 0
     var path = listOf<Cell>()
 
-    var reachedSet = hashSetOf<Cell>()  // Множество клеток, до которых может дотянутся
+    var reachedSet = setOf<Cell>()  // Множество клеток, до которых может дотянутся
     var bounds = listOf<Cell>()  // границы
 
     fun invokeAction() {
@@ -54,18 +54,17 @@ abstract class MovableGameObject(
         y = vy
     }
 
-    fun calcReachedSet() {
+    fun calcReachedSet(gridHandler: GridHandler) {
         val time = measureTimeMillis {
             reachedSet = if (attachedRopes.isEmpty())
                 hashSetOf()
-//                gridHandler.getGrid().flatten().toHashSet()
+//                gridHandler.getGrid().getAll()
             else {
-                var res = attachedRopes.first().ropeReachedSet
-                for (rope in attachedRopes)
-                    res = res.intersect(rope.ropeReachedSet)
+                var res = attachedRopes.first().setReachedSet(gridHandler)
+                for (i in 1 until attachedRopes.size)
+                    res = res.intersect(attachedRopes[i].setReachedSet(gridHandler))
 
-
-                res.toHashSet()
+                res
             }
         }
         Log.d("mytag", "movable reachedSet calculated for $time ")

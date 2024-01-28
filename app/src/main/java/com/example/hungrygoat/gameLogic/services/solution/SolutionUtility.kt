@@ -3,8 +3,8 @@ package com.example.hungrygoat.gameLogic.services.solution
 import com.example.hungrygoat.gameLogic.game.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.MovableGameObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
-import com.example.hungrygoat.gameLogic.services.GridHandler
 import com.example.hungrygoat.gameLogic.services.PhysicService
+import com.example.hungrygoat.gameLogic.services.grid.GridHandler
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sqrt

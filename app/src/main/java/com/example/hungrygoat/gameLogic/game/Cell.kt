@@ -5,28 +5,31 @@ import android.graphics.Paint
 import android.graphics.RectF
 import com.example.hungrygoat.constants.GameObjectTags
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.CellGameObject
+import com.example.hungrygoat.gameLogic.services.grid.GameGrid
 
-class Cell(val rect: RectF, vx: Float, vy: Float, val i: Int, val j: Int) :
+class Cell(private val rect: RectF, vx: Float, vy: Float, val i: Int, val j: Int) :
     CellGameObject(vx, vy, GameObjectTags.CELL) {
 
-    private val neighbors = hashSetOf<Cell>()
-    fun getNeighbours(grid: Array<Array<Cell>>): HashSet<Cell> {
+    private var neighbors = hashSetOf<Cell>()
+    fun getNeighbours(grid: GameGrid): HashSet<Cell> {
         if (neighbors.isEmpty())
-            setNeighbors(grid)
+            neighbors = setNeighbors(grid)
         return neighbors
     }
 
-    private fun setNeighbors(grid: Array<Array<Cell>>) {
-        val cols = grid.size
-        val rows = grid.first().size
+    private fun setNeighbors(grid: GameGrid): HashSet<Cell> {
+        val res = hashSetOf<Cell>()
+        val cols = grid.numCols
+        val rows = grid.numRows
         for (c in i - 1..i + 1)
             for (r in j - 1..j + 1) {
                 if (c == i && r == j) continue
                 val cInRange = c in 0 until cols
                 val rInRange = r in 0 until rows
                 if (cInRange && rInRange)
-                    neighbors.add(grid[c][r])
+                    res.add(grid[c, r])
             }
+        return res
     }
 
     override fun draw(canvas: Canvas, paint: Paint) {

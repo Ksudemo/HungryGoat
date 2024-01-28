@@ -11,9 +11,9 @@ import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Peg
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.RopeNode
-import com.example.hungrygoat.gameLogic.services.GridHandler
 import com.example.hungrygoat.gameLogic.services.InputHandler
 import com.example.hungrygoat.gameLogic.services.PhysicService
+import com.example.hungrygoat.gameLogic.services.grid.GridHandler
 
 class GameObjectFactory {
     private val physicService = PhysicService()
@@ -74,7 +74,7 @@ class GameObjectFactory {
                     GameObjectTags.GOAT,
                 ).apply {
                     movableAction {
-                        calcReachedSet()
+                        calcReachedSet(gridHandler)
                         setBoundary(gridHandler)
                     }
                     invokeAction()
@@ -86,7 +86,7 @@ class GameObjectFactory {
                     GameObjectTags.DOG
                 ).apply {
                     movableAction {
-                        calcReachedSet()
+                        calcReachedSet(gridHandler)
                         setBoundary(gridHandler)
                     }
                     invokeAction()
@@ -128,10 +128,9 @@ class GameObjectFactory {
             )
             val isTiedToRope =
                 tempObj.gameObjectTag == GameObjectTags.RopeNode || clickedObj.gameObjectTag == GameObjectTags.RopeNode
-            val rope = Rope(tempObj, clickedObj, isTiedToRope, length, GameObjectTags.ROPE).apply {
-                setRopeNodes()
-                setReachedSet(gridHandler)
-            }
+            val rope = Rope(tempObj, clickedObj, isTiedToRope, length, GameObjectTags.ROPE)
+            rope.setRopeNodes()
+
             if (isTiedToRope)
                 nodes.first().baseRope.attachedRopes.add(rope)
 

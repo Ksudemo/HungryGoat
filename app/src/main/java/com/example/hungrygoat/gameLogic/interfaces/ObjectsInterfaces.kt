@@ -3,7 +3,7 @@ package com.example.hungrygoat.gameLogic.interfaces
 import android.graphics.Canvas
 import android.graphics.Paint
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Dog
-import com.example.hungrygoat.gameLogic.services.GridHandler
+import com.example.hungrygoat.gameLogic.services.grid.GridHandler
 
 fun interface Draw {
     fun draw(canvas: Canvas, paint: Paint)
