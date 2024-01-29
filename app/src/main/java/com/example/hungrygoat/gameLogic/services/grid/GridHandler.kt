@@ -75,22 +75,44 @@ class GridHandler {
         return d
     }
 
-    fun getBoundaryCells(availableTargets: Set<Cell>): List<Cell> {
-        fun isBoundaryCell(avalibleTargets: Set<Cell>, cell: Cell): Boolean {
-            cell.getNeighbours(grid).apply {
-                return this.size < 8 || this.any { !avalibleTargets.contains(it) }
-            }
-        }
+    fun getBoundaryCells(availableTargets: Set<Pair<Int, Int>>): List<Cell> {
 
         val numCols = grid.numCols
         val numRows = grid.numRows
-        return when (availableTargets.isEmpty()) {
+
+        return when (availableTargets.isNotEmpty()) {
             true -> {
+                val res = mutableListOf<Cell>()
+
+                val horizontalBoundaries = availableTargets
+                    .groupBy { it.first }
+                    .mapValues { entry -> entry.value.map { it.second } }
+
+                val verticalBoundaries = availableTargets
+                    .groupBy { it.second }
+                    .mapValues { entry -> entry.value.map { it.first } }
+
+                for ((row, widths) in horizontalBoundaries) {
+                    val minCol = widths.minOrNull() ?: continue
+                    val maxCol = widths.maxOrNull() ?: continue
+                    res.add(grid[row, minCol])
+                    res.add(grid[row, maxCol])
+                }
+
+                for ((col, heights) in verticalBoundaries) {
+                    val minRow = heights.minOrNull() ?: continue
+                    val maxRow = heights.maxOrNull() ?: continue
+                    res.add(grid[minRow, col])
+                    res.add(grid[maxRow, col])
+                }
+
+                res
+            }
+
+            false -> {
                 (0 until numCols).flatMap { listOf(grid[it, 0], grid[it, numRows - 1]) } +
                         (0 until numRows).flatMap { listOf(grid[0, it], grid[numCols - 1, it]) }
             }
-
-            false -> availableTargets.filter { isBoundaryCell(availableTargets, it) }
         }
     }
 

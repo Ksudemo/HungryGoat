@@ -14,7 +14,7 @@ import com.example.hungrygoat.gameLogic.services.grid.GridHandler
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.system.measureTimeMillis
+import kotlin.time.measureTime
 
 class Rope(
     val objectFrom: GameObject,
@@ -88,44 +88,36 @@ class Rope(
         return xRange to yRange
     }
 
-    private fun getFilteredRanges(grid: GameGrid): List<Pair<IntRange, IntRange>> {
-        val (xRange, yRange) = getBoundinBoxIndecies(grid)
 
-        return mutableListOf(xRange to yRange)
-    }
-
-    fun setReachedSet(gridHandler: GridHandler): Set<Cell> {
+    fun setReachedSet(gridHandler: GridHandler): Set<Pair<Int, Int>> {
 //        If not tied to a rope and non of obj's connected is a movable (goat or dog)
         if (!isTiedToRope && !(tiedToMovale))
             return emptySet()
 
-        val res = mutableSetOf<Cell>()
-        val time = measureTimeMillis {
-            val grid = gridHandler.getGrid()
-            val ropeConnectedTo = getRopeConnectedTo()
-            val anchorPoint = getAnchorPoint()
+        val grid = gridHandler.getGrid()
+        val ropeConnectedTo = getRopeConnectedTo()
+        val anchorPoint = getAnchorPoint()
 
-            getFilteredRanges(grid).flatMap { (colRange, rowRange) ->
-                colRange.flatMap { i -> rowRange.map { j -> i to j } }
-            }.map { (i, j) ->
-                val cell = grid[i, j]
-                if (canRopeReachCell(gridHandler, ropeConnectedTo, anchorPoint, cell))
-                    res.add(cell)
-            }
-        }
-        Log.d("mytag", "rope.setReachedSet time - $time")
-        return res
+        val (rows, cols) = getBoundinBoxIndecies(grid)
+
+        return rows.flatMap { i -> cols.map { j -> i to j } }.filter { (i, j) ->
+            canRopeReachCell(
+                gridHandler,
+                ropeConnectedTo,
+                anchorPoint,
+                grid[i, j]
+            )
+        }.toSet()
+
     }
 
     private fun canReachCell(
         gridHandler: GridHandler,
-        otherX: Float, otherY: Float,
+        objFrom: GameObject,
         cellTo: Cell,
     ): Boolean {
-        return gridHandler.distBetween(
-            cellTo,
-            gridHandler.getClosestCell(otherX, otherY)
-        ) <= ropeLength + gridHandler.getGrid().cellSize / 2
+        val distance = gridHandler.distBetween(cellTo, objFrom)
+        return distance <= ropeLength + gridHandler.getGrid().cellSize / 2
     }
 
     private fun canRopeReachCell(
@@ -133,19 +125,11 @@ class Rope(
         baseRope: Rope?,
         anchor: GameObject?,
         targetCell: Cell,
-    ): Boolean {
-        val anyRopeCanReachCell = baseRope?.ropeNodes?.any { ropeNode ->
-            canReachCell(gridHandler, ropeNode.x, ropeNode.y, targetCell)
-        } ?: false
+    ) =
+        baseRope?.ropeNodes?.any { ropeNode ->
+            canReachCell(gridHandler, ropeNode, targetCell)
+        } ?: false || (anchor != null && canReachCell(gridHandler, anchor, targetCell))
 
-        if (isTiedToRope && baseRope != null && anyRopeCanReachCell)
-            return true
-
-        return when (anchor) {
-            null -> false
-            else -> canReachCell(gridHandler, anchor.x, anchor.y, targetCell)
-        }
-    }
 
     fun getAnchorPoint(): GameObject? = getRopeNode() ?: getPeg()
 
@@ -188,7 +172,7 @@ class Rope(
     }
 
     fun setRopeNodes() {
-        val time = measureTimeMillis {
+        val time = measureTime {
             val x1 = objectFrom.x
             val y1 = objectFrom.y
 

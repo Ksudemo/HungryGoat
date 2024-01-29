@@ -40,7 +40,9 @@ class Goat(vx: Float, vy: Float, tag: GameObjectTags) :
 
 
     private fun preparePath(gridHandler: GridHandler, dogObj: Dog?) {
-        path = (reachedSet - ((dogObj?.reachedSet ?: emptySet()).toSet())).toList()
+        val grid = gridHandler.getGrid()
+        path =
+            (reachedSet - ((dogObj?.reachedSet ?: emptySet()).toSet())).map { (i, j) -> grid[i, j] }
         pathSetted = true
         Log.d("mytag", "goat path size - ${path.size}")
 //                .sortedBy { gridHandler.distBetween(this, it.x, it.y) }

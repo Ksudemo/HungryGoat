@@ -43,13 +43,11 @@ class GameEngine {
 
     fun setGrid(w: Int, h: Int, cellSize: Float) {
         gridHandler.setGrid(w, h, cellSize)
-//        time = measureTimeMillis {
-//            createNewObject(352.5f, 1102.5f, PickedOptions.PEG)
-//            createNewObject(607.5f, 947.5f, PickedOptions.GOAT)
-//            createNewObject(352.5f, 1102.5f, PickedOptions.ROPE)
-//            createNewObject(607.5f, 947.5f, PickedOptions.ROPE)
-//        }
-//        Log.d("mytag", "time to setup circle - $time")
+//
+//        createNewObject(352.5f, 1102.5f, PickedOptions.PEG)
+//        createNewObject(607.5f, 947.5f, PickedOptions.GOAT)
+//        createNewObject(352.5f, 1102.5f, PickedOptions.ROPE)
+//        createNewObject(607.5f, 947.5f, PickedOptions.ROPE)
     }
 
     fun clearObjects() {

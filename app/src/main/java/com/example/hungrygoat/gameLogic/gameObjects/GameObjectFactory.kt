@@ -14,6 +14,7 @@ import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.RopeNode
 import com.example.hungrygoat.gameLogic.services.InputHandler
 import com.example.hungrygoat.gameLogic.services.PhysicService
 import com.example.hungrygoat.gameLogic.services.grid.GridHandler
+import kotlin.time.measureTime
 
 class GameObjectFactory {
     private val physicService = PhysicService()
@@ -51,8 +52,6 @@ class GameObjectFactory {
                     if (clickedGameObject == null || clickedGameObject == tempObj)
                         return null
 
-                    Log.d("mytag", "tempObj = $tempObj\n clickedGameObject = $clickedGameObject")
-
                     when (tempObj) {
                         null -> clickedGameObject.apply {
                             isTempOnRopeSet = true
@@ -73,10 +72,17 @@ class GameObjectFactory {
                     centerY,
                     GameObjectTags.GOAT,
                 ).apply {
-                    movableAction {
-                        calcReachedSet(gridHandler)
-                        setBoundary(gridHandler)
-                    }
+                    movableAction({
+                        val time1 = measureTime {
+                            calcReachedSet(gridHandler)
+                        }
+                        Log.d("mytag", "movable.calcReachedSet time - $time1")
+                    }, {
+                        val time2 = measureTime {
+                            setBoundary(gridHandler)
+                        }
+                        Log.d("mytag", "movable.setBoundary time - $time2")
+                    })
                     invokeAction()
                 }
 
@@ -85,10 +91,9 @@ class GameObjectFactory {
                     centerY,
                     GameObjectTags.DOG
                 ).apply {
-                    movableAction {
+                    movableAction({
                         calcReachedSet(gridHandler)
-                        setBoundary(gridHandler)
-                    }
+                    }, { setBoundary(gridHandler) })
                     invokeAction()
                 }
 

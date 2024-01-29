@@ -25,13 +25,13 @@ class RenderService {
     private val STROKE_WIDTH = 12f
     private val paint = setPaint()
     private val rectPaint = setPaint().apply {
+        style = Paint.Style.STROKE
         color = Color.BLACK
         strokeWidth = .5f
-        style = Paint.Style.STROKE
     }
-    private val linePaint = rectPaint.apply {
-        color = Color.MAGENTA
+    private val linePaint = Paint().apply {
         style = Paint.Style.STROKE
+        color = Color.MAGENTA
         strokeWidth = 4f
     }
     private val rulerPaint: Paint = Paint().apply {
@@ -40,12 +40,18 @@ class RenderService {
         strokeWidth = 10f
         pathEffect = DashPathEffect(floatArrayOf(10f, 10f), 0f)
     }
-    private val dogBoundsPaint = rectPaint.apply {
+    private val dogBoundsPaint = Paint().apply {
+        strokeWidth = 4f
         color = Color.LTGRAY
-        style = Paint.Style.FILL_AND_STROKE
+        style = Paint.Style.STROKE
     }
-    private val goatBoundsPaint = linePaint.apply { color = Color.BLUE }
-    private val goatPathPaint = rectPaint.apply {
+    private val goatBoundsPaint = Paint().apply {
+        strokeWidth = 4f
+        color = Color.BLUE
+        style = Paint.Style.STROKE
+    }
+    private val goatPathPaint = Paint().apply {
+        strokeWidth = .5f
         color = goatVisitedColor
         style = Paint.Style.FILL_AND_STROKE
     }
@@ -118,9 +124,8 @@ class RenderService {
 
     private fun drawGoatPath(canvas: Canvas, goat: Goat?) {
         if (goat != null && goat.path.isNotEmpty())
-            for (i in 0 until goat.lastVisitedIndex) {
+            for (i in 0 until goat.lastVisitedIndex)
                 drawCell(canvas, goatPathPaint, goat.path[i])
-            }
     }
 
     private fun drawGoatBounds(canvas: Canvas, goat: Goat?) {
@@ -146,7 +151,7 @@ class RenderService {
                 for (b in bounds)
                     drawCell(canvas, cell = b, paint = goatBoundsPaint)
 
-                canvas.drawRect(minX, maxY, maxX, minY, linePaint.apply { color = Color.GRAY })
+//                canvas.drawRect(minX, maxY, maxX, minY, linePaint.apply { color = Color.GRAY })
                 drawCell(canvas, linePaint.apply { color = Color.RED }, rT)
                 drawCell(canvas, linePaint.apply { color = Color.GREEN }, rB)
                 drawCell(canvas, linePaint.apply { color = Color.BLUE }, lB)
