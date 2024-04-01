@@ -4,135 +4,83 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.View.OnClickListener
-import android.widget.Button
 import android.widget.CheckBox
-import android.widget.Spinner
-import android.widget.Toast
+import android.widget.ImageButton
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.example.hungrygoat.R
-import com.example.hungrygoat.app.helpers.CustomAdapter
+import com.google.android.material.slider.Slider
 
 class SettingsActivity : AppCompatActivity(), OnClickListener {
-
-
-    private lateinit var pickCellSizeSpinner: Spinner
-
-    //    private lateinit var pickRenderTypeSpinner: Spinner
-    private lateinit var cellIndexCheckBox: CheckBox
-    private lateinit var drawRopeNodesCheckBox: CheckBox
+    private lateinit var drawGrahamScanLinesCheckBox: CheckBox
     private lateinit var drawDogBoundsCheckBox: CheckBox
     private lateinit var drawGoatBoundsCheckBox: CheckBox
+    private lateinit var rangeSlider: Slider
 
-    private lateinit var saveSettingButton: Button
+    private lateinit var saveSettingButton: ImageButton
     private lateinit var settings: SharedPreferences
 
-    private lateinit var s1: String
-    private lateinit var s2: String
-    private lateinit var s3: String
-    private lateinit var s4: String
-    private lateinit var s5: String
-
+    private lateinit var drawGrahamScanLinesResString: String
+    private lateinit var drawGoatBoundsResString: String
+    private lateinit var drawDogBoundsResString: String
+    private lateinit var changeObjectsSizeString: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.settings_layout)
 
-        cellIndexCheckBox = findViewById(R.id.cellIndexCheckBox)
-        drawRopeNodesCheckBox = findViewById(R.id.drawRopeNodesCheckBox)
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                startActivity(Intent(applicationContext, StartActivity::class.java))
+            }
+        })
+
+        drawGrahamScanLinesCheckBox = findViewById(R.id.drawGrahamScanLinesCheckBox)
         drawDogBoundsCheckBox = findViewById(R.id.drawDogBoundsCheckBox)
         drawGoatBoundsCheckBox = findViewById(R.id.drawGoatBoundsCheckBox)
+        rangeSlider = findViewById(R.id.rangeSlider)
 
-        s1 = resources.getString(R.string.pick_cell_size)
-        s2 = resources.getString(R.string.enableDrawCellIndex)
-        s3 = resources.getString(R.string.enableDrawRopeNodes)
-        s4 = resources.getString(R.string.enableRenderGoatBounds)
-        s5 = resources.getString(R.string.enableRenderDogBounds)
+        drawGrahamScanLinesResString = resources.getString(R.string.enableGrahamScanLines)
+        drawGoatBoundsResString = resources.getString(R.string.enableRenderGoatBounds)
+        drawDogBoundsResString = resources.getString(R.string.enableRenderDogBounds)
+        changeObjectsSizeString = resources.getString(R.string.changeObjectsSize)
 
         settings = applicationContext.getSharedPreferences(
             resources.getString(R.string.sharedPrefsSettingsName),
             Context.MODE_PRIVATE
         )
 
-        cellIndexCheckBox.isChecked = settings.getBoolean(s2, false)
-        drawRopeNodesCheckBox.isChecked = settings.getBoolean(s3, false)
-        drawGoatBoundsCheckBox.isChecked = settings.getBoolean(s4, false)
-        drawDogBoundsCheckBox.isChecked = settings.getBoolean(s5, false)
+        drawGoatBoundsCheckBox.isChecked = settings.getBoolean(drawGoatBoundsResString, true)
+        drawDogBoundsCheckBox.isChecked = settings.getBoolean(drawDogBoundsResString, true)
+        drawGrahamScanLinesCheckBox.isChecked =
+            settings.getBoolean(drawGrahamScanLinesResString, true)
+        rangeSlider.value = settings.getFloat(changeObjectsSizeString, rangeSlider.valueFrom)
 
         saveSettingButton = findViewById(R.id.saveSettingsButton)
         saveSettingButton.setOnClickListener(this)
-
-
-        val cellSizesList = mutableListOf(
-            "Выберите элемент",
-            "200.0f",
-            "100.0f",
-            "50.0f",
-            "20.0f",
-            "15.0f",
-            "10.0f",
-            "9.0f",
-            "8.0f",
-            "7.0f",
-            "6.0f",
-            "5.0f",
-            "4.0f",
-            "3.0f",
-            "2.0f",
-            "1.0f"
-        )
-
-        pickCellSizeSpinner = findViewById(R.id.pickCellSizeSpinner)
-
-        val cellSizeAdapter = CustomAdapter(
-            this,
-            android.R.layout.simple_spinner_item,
-            cellSizesList
-        )
-
-
-        cellSizeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        pickCellSizeSpinner.adapter = cellSizeAdapter
-        pickCellSizeSpinner.setSelection(
-            getItemToSelect(
-                cellSizesList,
-                settings.getFloat(s1, -1f).toString()
-            )
-        )
-    }
-
-    private fun getItemToSelect(lst: List<String>, itemToSearch: String): Int {
-        lst.forEachIndexed { i, str ->
-            if (str.contains(itemToSearch)) return i
-        }
-        return -1
     }
 
     override fun onClick(v: View?) {
         when (v?.id) {
             R.id.saveSettingsButton -> {
-
-                val cellSizeSpinnerItem = pickCellSizeSpinner.selectedItem.toString()
-
-                if (cellSizeSpinnerItem == "Выберите элемент") {
-                    Toast.makeText(
-                        applicationContext,
-                        "Выберите размер клетки!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return
-                }
-
+                Log.d("mytag", "${rangeSlider.value}")
                 settings.edit().apply {
-                    putFloat(s1, cellSizeSpinnerItem.split("f").first().toFloat())
-                    putBoolean(s2, cellIndexCheckBox.isChecked)
-                    putBoolean(s3, drawRopeNodesCheckBox.isChecked)
-                    putBoolean(s4, drawGoatBoundsCheckBox.isChecked)
-                    putBoolean(s5, drawDogBoundsCheckBox.isChecked)
+                    putBoolean(drawGoatBoundsResString, drawGoatBoundsCheckBox.isChecked)
+                    putBoolean(drawDogBoundsResString, drawDogBoundsCheckBox.isChecked)
+                    putBoolean(drawGrahamScanLinesResString, drawGrahamScanLinesCheckBox.isChecked)
+                    putFloat(changeObjectsSizeString, rangeSlider.value)
                     apply()
                 }
-
+                Log.d(
+                    "mytag",
+                    "$drawGoatBoundsResString - ${drawGoatBoundsCheckBox.isChecked}\n" +
+                            "$drawDogBoundsResString - ${drawDogBoundsCheckBox.isChecked}\n" +
+                            "$drawGrahamScanLinesResString - ${drawGrahamScanLinesCheckBox.isChecked}\n" +
+                            "$changeObjectsSizeString - ${rangeSlider.value}\n"
+                )
                 startActivity(
                     Intent(
                         applicationContext,
@@ -141,9 +89,7 @@ class SettingsActivity : AppCompatActivity(), OnClickListener {
                 )
             }
 
-            else -> {
-                return
-            }
+            else -> return
         }
     }
 }

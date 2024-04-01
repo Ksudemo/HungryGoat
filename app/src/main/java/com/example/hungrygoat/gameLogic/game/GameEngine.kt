@@ -3,60 +3,114 @@ package com.example.hungrygoat.gameLogic.game
 import android.graphics.Canvas
 import android.util.Log
 import android.view.MotionEvent
-import com.example.hungrygoat.constants.GameObjectTags
-import com.example.hungrygoat.constants.GameStates
-import com.example.hungrygoat.constants.LevelConditions
-import com.example.hungrygoat.constants.PickedOptions
-import com.example.hungrygoat.constants.SingletonAppConstantsInfo
+import com.example.hungrygoat.constants.appContants.SingletonAppConstantsInfo
+import com.example.hungrygoat.constants.enums.GameObjectTags
+import com.example.hungrygoat.constants.enums.GameStates
+import com.example.hungrygoat.constants.enums.LevelConditions
+import com.example.hungrygoat.constants.enums.PickedOptions
+import com.example.hungrygoat.gameLogic.game.grid.GridHandler
 import com.example.hungrygoat.gameLogic.gameObjects.GameObjectFactory
+import com.example.hungrygoat.gameLogic.gameObjects.RulerSet
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Dog
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
-import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Peg
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.rope.Rope
+import com.example.hungrygoat.gameLogic.interfaces.EducationStepDoneListener
+import com.example.hungrygoat.gameLogic.interfaces.dogListeners.DogUnboundedListener
+import com.example.hungrygoat.gameLogic.interfaces.enigneListeners.CheckSolutionListener
+import com.example.hungrygoat.gameLogic.interfaces.enigneListeners.RopeDepthLevelBoundsListener
+import com.example.hungrygoat.gameLogic.interfaces.goatListeners.GoatUnboundedListener
+import com.example.hungrygoat.gameLogic.services.EducationHelperService
 import com.example.hungrygoat.gameLogic.services.InputHandler
 import com.example.hungrygoat.gameLogic.services.PhysicService
 import com.example.hungrygoat.gameLogic.services.RenderService
-import com.example.hungrygoat.gameLogic.services.grid.GridHandler
 import com.example.hungrygoat.gameLogic.services.solution.SolutionService
+import java.util.Collections
 
 class GameEngine {
+    private var goatUnboundedListener: GoatUnboundedListener? = GoatUnboundedListener {}
+    private var dogUnboundedListener: DogUnboundedListener? = DogUnboundedListener {}
+    private var checkSolutionListener: CheckSolutionListener? =
+        CheckSolutionListener { _: List<LevelConditions>, _: Int -> }
+
+    private var ropeDepthLevelBoundsListener: RopeDepthLevelBoundsListener? =
+        RopeDepthLevelBoundsListener {}
+    private var educationStepDoneListener: EducationStepDoneListener? = EducationStepDoneListener {}
+
+    fun registereEducationStepDoneListener(edu: EducationStepDoneListener) {
+        educationStepDoneListener = edu
+    }
+
+    fun unregistereEducationStepDoneListener() {
+        educationStepDoneListener = null
+    }
+
+    fun registerRopeDepthLevelBoundsListener(ropeDepthListener: RopeDepthLevelBoundsListener) {
+        ropeDepthLevelBoundsListener = ropeDepthListener
+    }
+
+    fun unregisterRopeDepthLevelBoundsListener() {
+        ropeDepthLevelBoundsListener = null
+    }
+
+    fun regesterCheckSolutionListener(checkSolListener: CheckSolutionListener) {
+        checkSolutionListener = checkSolListener
+    }
+
+    fun unregesterCheckSolutionListener() {
+        checkSolutionListener = null
+    }
+
+    fun registerMovableErrorsListener(
+        dogUnbounded: DogUnboundedListener,
+        goatUnbounded: GoatUnboundedListener? = null
+    ) {
+        goatUnboundedListener = goatUnbounded
+        dogUnboundedListener = dogUnbounded
+    }
+
+    fun unregesterMovableErrorsListener() {
+        dogUnboundedListener = null
+        goatUnboundedListener = null
+    }
 
     companion object {
         private val solutionService = SolutionService()
         private val renderService = RenderService()
+        private val eduService = EducationHelperService()
 
         private val gridHandler = GridHandler()
         private val gameObjectFactory = GameObjectFactory()
 
         private var goat: Goat? = null
-        private var dog: Dog? = null
+        private var dogs = mutableListOf<Dog>()
 
-        private val objects = mutableListOf<GameObject>()
-        private val ropes = mutableListOf<Rope>()
+        private var ropes = Collections.synchronizedList(mutableListOf<Rope>())
+        private var objects = Collections.synchronizedList(mutableListOf<GameObject>())
+        private val objectsMutex = Any()
+        private val history = mutableListOf<GameObject>()
 
-        var ruler = mutableListOf<List<Any>>()
+        var ruler = mutableListOf<RulerSet>()
 
         private var tempWhileMove: GameObject? = null
-        fun getObjects() = objects
-        fun getRopes() = ropes
+        fun getObjects(): MutableList<GameObject> = objects
+        fun getRopes(): MutableList<Rope> = ropes
     }
 
+    fun getRenderSerivece() = renderService
     fun setGrid(w: Int, h: Int, cellSize: Float) {
         gridHandler.setGrid(w, h, cellSize)
-//
-//        createNewObject(352.5f, 1102.5f, PickedOptions.PEG)
-//        createNewObject(607.5f, 947.5f, PickedOptions.GOAT)
-//        createNewObject(352.5f, 1102.5f, PickedOptions.ROPE)
-//        createNewObject(607.5f, 947.5f, PickedOptions.ROPE)
     }
 
     fun clearObjects() {
         objects.clear()
         ropes.clear()
         ruler.clear()
+        history.clear()
 
         goat = null
-        dog = null
+        dogs.clear()
 
         resetTempObj()
     }
@@ -65,21 +119,64 @@ class GameEngine {
         objects.find { it.isTempOnRopeSet }?.isTempOnRopeSet = false
     }
 
-    fun checkSolution(levelCondition: LevelConditions): Boolean =
+    fun revertLastMove() {
+        val appC = SingletonAppConstantsInfo.getAppConst()
+        if (appC.getState() != GameStates.STATE_PLAYER_PLACE_OBJECTS)
+            return
+
+        if (history.isNotEmpty()) {
+            val last = history.removeLast()
+            if (last.gameObjectTag == GameObjectTags.ROPE)
+                removeFromRopes(listOf(last as Rope)) else removeFromObjects(last)
+        }
+    }
+
+    private fun checkSolution(): List<LevelConditions> =
         when {
-            goat == null || goat?.bounds?.isEmpty() == true -> false
-            else ->
-                solutionService.checkSolution(goat!!, dog, gridHandler, levelCondition)
+            goat?.attachedRopes?.isEmpty() == true -> {
+                goatUnboundedListener?.onGoatUnbounded()
+                emptyList()
+            }
+
+            dogs.any { it.attachedRopes.isEmpty() } -> {
+                dogUnboundedListener?.onDogUnbounded()
+                emptyList()
+            }
+
+            else -> solutionService.checkSolution(goat!!, dogs, gridHandler)
         }
 
+
     fun update() {
-        if (goat != null) {
-            val updateSuccess = goat?.update(gridHandler, dog)
-            val appC = SingletonAppConstantsInfo.getAppConst()
-            if (updateSuccess == false && appC.getState() != GameStates.STATE_CHECK_SOLUTION)
-                appC.changeState(GameStates.STATE_CHECK_SOLUTION)
+        when {
+            goat == null -> return
+            goat?.attachedRopes?.isEmpty() == true -> {
+                goatUnboundedListener?.onGoatUnbounded()
+                return
+            }
+
+            dogs.any { it.attachedRopes.isEmpty() } -> {
+                dogUnboundedListener?.onDogUnbounded()
+                return
+            }
         }
-        dog?.update(gridHandler, goat?.hadAvailableCells ?: false)
+
+        val appC = SingletonAppConstantsInfo.getAppConst()
+        var updateSuccess = false
+
+        repeat(appC.updatePerFrame) {
+            updateSuccess = goat?.update(gridHandler, dogs) == true
+
+            ropes.forEach { it.update() }
+            dogs.forEach { it.update(gridHandler) }
+        }
+
+        val stateToCheck = GameStates.STATE_CHECK_SOLUTION
+        if (!updateSuccess && appC.getState() != stateToCheck) {
+            appC.changeState(stateToCheck)
+            checkSolutionListener?.checkSolution(checkSolution(), dogs.size)
+            return
+        }
     }
 
     fun draw(canvas: Canvas) =
@@ -90,174 +187,262 @@ class GameEngine {
             ropes,
             tempWhileMove,
             ruler,
-            SingletonAppConstantsInfo.appConstants.getSetttings()
+            SingletonAppConstantsInfo.getAppConst().getSetttings()
         )
-
 
     fun handleTouch(
         event: MotionEvent,
         pickedOption: PickedOptions,
         state: GameStates,
-    ) =
+        radius: Float
+    ) {
         if (state == GameStates.STATE_PLAYER_PLACE_OBJECTS) {
             val x = event.x
             val y = event.y
             when (event.action) {
-                MotionEvent.ACTION_UP -> createNewObject(x, y, pickedOption)
-                MotionEvent.ACTION_MOVE -> tempCreateNewObjectOnMove(x, y, pickedOption)
-                else -> null
-            }
-        } else null
-
-    private fun createNewObject(x: Float, y: Float, pickedOption: PickedOptions) {
-        when (pickedOption) {
-            PickedOptions.ERASER -> eraseObject(x, y)
-            else -> {
-                val createdObject =
-                    gameObjectFactory.createNewObject(
-                        x, y, objects.find { it.isTempOnRopeSet }, pickedOption, gridHandler
-                    )
-                handleCreatedObject(createdObject ?: return)
+                MotionEvent.ACTION_UP -> createNewObject(x, y, pickedOption, radius)
+                MotionEvent.ACTION_MOVE -> tempCreateNewObjectOnMove(x, y, pickedOption, radius)
             }
         }
-        tempWhileMove = null
-        ruler.clear()
     }
 
-    private fun tempCreateNewObjectOnMove(x: Float, y: Float, pickedOption: PickedOptions) {
+    private fun createNewObject(x: Float, y: Float, pickedOption: PickedOptions, radius: Float) {
+        synchronized(objectsMutex) {
+            Log.d("mytag", "x = $x \n y = $y \n")
+            when (pickedOption) {
+                PickedOptions.ERASER -> eraseObject(x, y)
+                else -> {
+                    val createdObject = gameObjectFactory.createNewObject(
+                        x, y, objects.find { it.isTempOnRopeSet }, pickedOption, gridHandler, radius
+                    )
+
+                    val curEduStepTag = SingletonAppConstantsInfo.getAppConst().getCurEduStepTag()
+                    val flag = eduService.canCreate(curEduStepTag, pickedOption, createdObject)
+
+                    Log.d("mytag", "created - $createdObject")
+                    Log.d("mytag", "isTempOnRopeSet - ${objects.find { it.isTempOnRopeSet }}")
+
+                    when (flag) {
+                        true -> {
+                            if (curEduStepTag != null) educationStepDoneListener?.onStepDone()
+                            handleCreatedObject(createdObject ?: return)
+                        }
+
+                        else -> createdObject?.isTempOnRopeSet = false
+                    }
+                    Log.d("mytag", "objs size - ${objects.size}")
+                }
+            }
+
+            tempWhileMove = null
+            ruler.clear()
+        }
+    }
+
+    private fun tempCreateNewObjectOnMove(
+        x: Float,
+        y: Float,
+        pickedOption: PickedOptions,
+        radius: Float
+    ) {
+        if (pickedOption == PickedOptions.ROPE) return
         ruler.clear()
 
         if (tempWhileMove != null && tempWhileMove?.gameObjectTag.toString() == pickedOption.toString()) {
+
             tempWhileMove?.x = x
             tempWhileMove?.y = y
 
             objects.forEach {
-                val angle = PhysicService().calcAngleBetweenInDeg(
+                val angle = PhysicService().calcAngleBetween(
                     tempWhileMove!!, it
                 )
-                ruler.add(listOf(tempWhileMove!!, it, angle))
+                val rulerSet = RulerSet(tempWhileMove!!, it, angle)
+                ruler.add(rulerSet)
             }
         } else
-            tempWhileMove =
-                gameObjectFactory.createNewObject(
-                    x, y, objects.find { it.isTempOnRopeSet }, pickedOption, gridHandler
-                ) ?: return
+            tempWhileMove = gameObjectFactory.createNewObject(
+                x, y, objects.find { it.isTempOnRopeSet }, pickedOption, gridHandler, radius
+            ) ?: return
     }
 
+
     private fun eraseObject(x: Float, y: Float) {
-        val clickedObject = InputHandler().getClickedObject(objects, x, y)
+        val clickedObject = InputHandler().getClickedObject(gridHandler, objects, x, y)
+        val rope = InputHandler().getClickedRopeSegment(gridHandler, ropes, x, y)?.baseRope
 
         if (clickedObject != null)
             removeFromObjects(clickedObject)
-        else {
-            val clickedRope =
-                InputHandler().getClickedRopeNodeObject(
-                    ropes, x, y
-                ).firstOrNull()?.baseRope
-            removeFromRopes(clickedRope)
-        }
+        else removeFromRopes(listOfNotNull(rope))
     }
 
-    private fun handleCreatedObject(createdObject: GameObject) =
+    @Synchronized
+    private fun handleCreatedObject(createdObject: GameObject) {
         if (createdObject.gameObjectTag == GameObjectTags.ROPE)
             addToRopes(createdObject as Rope)
         else
             checkAndSetMovable(createdObject)
+    }
 
+    private fun canAttach(isDog: Boolean, isGoat: Boolean, rope: Rope): Boolean {
+        if (isDog && isGoat) return false
+
+        val anchor =
+            if (rope.objectTo.gameObjectTag != GameObjectTags.RopeSegment) rope.objectTo else
+                if (rope.objectFrom.gameObjectTag != GameObjectTags.RopeSegment) rope.objectFrom else return true
+
+        val ropeConnectedToAttached =
+            anchor.attachedRopes.any { attached -> rope.getRopeConnectedTo() == attached }
+
+        val ropeAndAnyAttachedConnectedToSameRope =
+            anchor.attachedRopes.any { attached -> rope.getRopeConnectedTo() == attached.getRopeConnectedTo() && rope.getRopeConnectedTo() != null }
+
+        return !ropeConnectedToAttached && !ropeAndAnyAttachedConnectedToSameRope
+    }
+
+    @Synchronized
     private fun addToRopes(obj: GameObject) {
         val rope = obj as Rope
-        if (ropes.any { it.isTiedToThisRope(rope) }) return
+        objects.find { it.isTempOnRopeSet }?.isTempOnRopeSet = false
+        objects.removeIf { it.gameObjectTag == GameObjectTags.RopeSegment }
 
         val isDog = isObjADog(rope.objectTo, rope.objectFrom)
         val isGoat = isObjAGoat(rope.objectTo, rope.objectFrom)
 
-        if (isDog)
-            dog?.attachRope(rope)
-        else if (isGoat)
-            goat?.attachRope(rope)
+        Log.d("mytag", "can attach - ${canAttach(isDog, isGoat, rope)}")
+        if (!canAttach(isDog, isGoat, rope)) return
 
-        Log.d(
-            "mytag",
-            "isTiedToRope = ${rope.isTiedToRope}\n from = ${rope.objectFrom}\n to = ${rope.objectTo}"
-        )
+        if (rope.depthLevel > 2) {
+            ropeDepthLevelBoundsListener?.onRopeToHighDepth()
+            return
+        }
+        when {
+            isGoat -> {
+                goat?.attachRope(rope)
+                goat?.preparePath(gridHandler, dogs)
+            }
+
+            isDog -> {
+                dogs.find { it == rope.objectTo || it == rope.objectFrom }?.attachRope(rope)
+                goat?.preparePath(gridHandler, dogs)
+            }
+        }
+
+        if (rope.objectFrom.gameObjectTag == GameObjectTags.PEG)
+            (rope.objectFrom as Peg).attachedRopes.add(rope)
+
+        if (rope.objectTo.gameObjectTag == GameObjectTags.PEG)
+            (rope.objectTo as Peg).attachedRopes.add(rope)
+
+        rope.id = if (ropes.isEmpty()) 0 else ropes.last().id + 1
         ropes.add(rope)
+        history.add(rope)
     }
 
+    @Synchronized
     private fun checkAndSetMovable(obj: GameObject) {
+        if (objects.find { it.x == obj.x && it.y == obj.y && it.gameObjectTag == obj.gameObjectTag } != null)
+            return
+
         val isDog = isObjADog(obj)
         val isGoat = isObjAGoat(obj)
 
-        if ((isDog || isGoat) && !obj.isTempOnRopeSet) {
-            removeFromObjects(obj)
+        if (isGoat && !obj.isTempOnRopeSet)
+            removeFromObjects(goat)
 
-            when {
-                isGoat -> {
-                    goat = null
-                    goat = obj as Goat
-                }
+        when {
+            isGoat -> goat = (obj as Goat)
 
-                else -> {
-                    dog = null
-                    dog = obj as Dog
-                    goat?.moveToStart()
+            isDog -> {
+                dogs.add(obj as Dog)
+                goat?.apply {
+                    moveToStart()
+                    preparePath(gridHandler, dogs)
                 }
             }
         }
 
+        if (!obj.isTempOnRopeSet)
+            history.add(obj)
         objects.add(obj)
     }
 
+
+    @Synchronized
     private fun removeFromObjects(obj: GameObject?) {
-        if (obj == null) return
+        try {
+            if (obj == null) return
 
-        val curObjTag = obj.gameObjectTag
-        val curObjAGoat = isObjAGoat(obj)
-        val curObjADog = isObjADog(obj)
+            val curObjTag = obj.gameObjectTag
+            val curObjAGoat = isObjAGoat(obj)
+            val curObjADog = isObjADog(obj)
 
-        if (curObjADog || curObjAGoat)
-            objects.removeIf { it.gameObjectTag == curObjTag }
-        else
+            if (curObjAGoat) {
+                val ropes = goat?.attachedRopes ?: emptyList()
+                goat?.attachedRopes = mutableListOf()
+
+                objects.remove(goat)
+                goat = null
+
+                removeFromRopes(ropes)
+
+                return
+            } else if (curObjADog) {
+                val dog = obj as Dog
+                objects.remove(dog)
+                dogs.remove(dog)
+                goat?.preparePath(gridHandler, dogs)
+
+                removeFromRopes(dog.attachedRopes)
+                dog.attachedRopes = mutableListOf()
+
+                return
+            }
+
             objects.removeIf { it.gameObjectTag == curObjTag && it.x == obj.x && it.y == obj.y }
-
-        if (curObjAGoat)
-            goat = null
-        else if (curObjADog)
-            dog = null
-
-        val ropeToRemove =
-            ropes.find { it.objectTo.gameObjectTag == curObjTag || it.objectFrom.gameObjectTag == curObjTag }
-
-        removeFromRopes(ropeToRemove)
+            removeFromRopes(obj.attachedRopes)
+        } catch (e: Exception) {
+            Log.e("mytag", "exception in removeFromObjects ${e.printStackTrace()}")
+        }
     }
 
-    private fun removeFromRopes(rope: Rope?) {
-        if (rope == null) return
+    @Synchronized
+    private fun removeFromRopes(ropesToRemove: List<Rope>) {
+        if (ropesToRemove.isEmpty()) return
+        val ropesToRemoveAsSet = ropesToRemove.toSet()
 
-        if (rope.tiedToMovale) {
-            goat?.deattachRope(rope)
-            dog?.deattachRope(rope)
+        (goat?.attachedRopes?.intersect(ropesToRemoveAsSet) ?: emptySet())
+            .forEach { goat?.deattachRope(it) }
+
+        for (dog in dogs) {
+            dog.attachedRopes.intersect(ropesToRemoveAsSet)
+                .forEach { dog.deattachRope(it) }
         }
-
-        ropes.remove(rope)
-        rope.attachedRopes.forEach { removeFromRopes(it) }
-        rope.remove()
+        goat?.preparePath(gridHandler, dogs)
+        ropes.minusAssign(ropesToRemoveAsSet)
+        for (r in ropesToRemove)
+            removeFromRopes(r.attachedRopes)
     }
 
     private fun isObjADog(vararg objs: GameObject): Boolean =
-        objs.find { it.gameObjectTag == GameObjectTags.DOG } != null
+        objs.any { it.gameObjectTag == GameObjectTags.DOG }
 
     private fun isObjAGoat(vararg objs: GameObject): Boolean =
-        objs.find { it.gameObjectTag == GameObjectTags.GOAT } != null
-
+        objs.any { it.gameObjectTag == GameObjectTags.GOAT }
 
     fun restoreInitialState() {
-        goat?.moveToStart()
-        dog?.moveToStart()
+        goat?.apply {
+            moveToStart()
+        }
+        dogs.forEach {
+            it.moveToStart()
+            it.path = emptyList()
+        }
     }
 
-
+    fun goatAvaliable() = goat != null
     fun killEngine() {
-//        clearObjects()
-//        gridHandler.freeGrid()
+        clearObjects()
+        gridHandler.freeGrid()
     }
 }

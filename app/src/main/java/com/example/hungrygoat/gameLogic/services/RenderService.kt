@@ -4,48 +4,56 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.DashPathEffect
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.util.Log
-import com.example.hungrygoat.constants.GameObjectTags
-import com.example.hungrygoat.constants.GameSettings
-import com.example.hungrygoat.gameLogic.game.Cell
+import com.example.hungrygoat.constants.appContants.GameSettings
+import com.example.hungrygoat.constants.enums.GameObjectTags
+import com.example.hungrygoat.gameLogic.game.grid.GridHandler
+import com.example.hungrygoat.gameLogic.gameObjects.RulerSet
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Dog
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
-import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
-import com.example.hungrygoat.gameLogic.services.grid.GameGrid
-import com.example.hungrygoat.gameLogic.services.grid.GridHandler
-import kotlin.math.abs
-import kotlin.math.max
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.rope.Rope
+import com.example.hungrygoat.gameLogic.interfaces.goatListeners.GoatBoundsTouchEdgesListener
+import com.example.hungrygoat.gameLogic.services.solution.SolutionUtility
 
 class RenderService {
 
-    private val backgroundColor = Color.rgb(0, 100, 0)
-    private val goatVisitedColor = Color.rgb(0, 255, 0)
+    private var goatBoundsTouchEdgesListener: GoatBoundsTouchEdgesListener? =
+        GoatBoundsTouchEdgesListener {}
+
+    fun registerGoatBoundsTouchEdgesListener(goatTouchEdges: GoatBoundsTouchEdgesListener) {
+        goatBoundsTouchEdgesListener = goatTouchEdges
+    }
+
+    fun unregisterGoatBoundTouchEdgesListener() {
+        goatBoundsTouchEdgesListener = null
+    }
+
+    private val backgroundColor = Color.rgb(34, 177, 76) // 0 100 0
+    private val goatVisitedColor = Color.rgb(181, 230, 29) // 0 255 0
 
     private val STROKE_WIDTH = 12f
     private val paint = setPaint()
-    private val rectPaint = setPaint().apply {
-        style = Paint.Style.STROKE
+    private val rulerPaint: Paint = setPaint().apply {
         color = Color.BLACK
-        strokeWidth = .5f
-    }
-    private val linePaint = Paint().apply {
-        style = Paint.Style.STROKE
-        color = Color.MAGENTA
-        strokeWidth = 4f
-    }
-    private val rulerPaint: Paint = Paint().apply {
-        color = Color.BLACK
-        style = Paint.Style.STROKE
         strokeWidth = 10f
         pathEffect = DashPathEffect(floatArrayOf(10f, 10f), 0f)
     }
-    private val dogBoundsPaint = Paint().apply {
+    private val rulerTextPaint = setPaint().apply {
+        textSize = 95f
+        style = Paint.Style.FILL_AND_STROKE
+        strokeWidth = STROKE_WIDTH / 2
+        typeface = Typeface.MONOSPACE
+        color = Color.RED
+    }
+    private val dogBoundsPaint = setPaint().apply {
         strokeWidth = 4f
         color = Color.LTGRAY
         style = Paint.Style.STROKE
     }
-    private val goatBoundsPaint = Paint().apply {
+    private val goatBoundsPaint = setPaint().apply {
         strokeWidth = 4f
         color = Color.BLUE
         style = Paint.Style.STROKE
@@ -56,10 +64,10 @@ class RenderService {
         style = Paint.Style.FILL_AND_STROKE
     }
 
-    private val textPaint = paint.apply {
+    private val textPaint = Paint().apply {
         color = Color.BLACK
         textSize = 80f
-        style = Paint.Style.STROKE
+        style = Paint.Style.FILL_AND_STROKE
     }
 
     fun render(
@@ -68,104 +76,147 @@ class RenderService {
         objects: List<GameObject>,
         ropes: List<Rope>,
         tempWhileMove: GameObject?,
-        ruller: List<List<Any>>,
+        ruller: List<RulerSet>,
         settings: GameSettings,
     ) {
         try {
             drawBackground(canvas)
 
-            val dog = objects.find { it.gameObjectTag == GameObjectTags.DOG } as Dog?
+            val dogs = objects.filter { it.gameObjectTag == GameObjectTags.DOG }.map { it as Dog }
             val goat = objects.find { it.gameObjectTag == GameObjectTags.GOAT } as Goat?
 
-            if (settings.drawCellIndex)
-                drawCellIndex(canvas, gridHandler.getGrid())
-
             if (settings.drawDogBounds)
-                drawDogBounds(canvas, dog)
+                drawDogBounds(canvas, dogs)
 
             drawGoatPath(canvas, goat)
             if (settings.drawGoatBounds)
                 drawGoatBounds(canvas, goat)
 
-            if (settings.drawRopeNodes)
-                drawRopeNodes(canvas, ropes, paint)
+            if (settings.drawGrahamScanLines)
+                goat?.bounds?.let { testGrahamScanStuff(canvas, it, gridHandler) }
 
             drawRuler(canvas, ruller)
             drawObjectAndRopes(canvas, objects, ropes, tempWhileMove)
-
         } catch (e: Exception) {
             Log.e("mytag", "RenderService.render() ${e.printStackTrace()}")
         }
     }
 
 
-    private fun drawRuler(canvas: Canvas, ruller: List<List<Any>>) {
+    private fun drawRuler(canvas: Canvas, ruller: List<RulerSet>) {
         ruller.forEach {
-            val a = it[0] as GameObject
-            val b = it[1] as GameObject
-            val angle = "%.2f".format(it[2] as Double)
+            val a = it.from
+            val b = it.to
+            val angle = "%.2f".format(it.angle)
             canvas.drawLine(a.x, a.y, b.x, b.y, rulerPaint)
-            canvas.drawText("$angle°", (a.x + b.x) / 2, b.y + 10, paint.apply {
-                textSize = 100f
-                color = Color.RED
-            })
+            canvas.drawText("$angle°", (a.x + b.x) / 2, b.y + 10, rulerTextPaint)
         }
     }
 
     private fun drawBackground(canvas: Canvas) =
         canvas.drawColor(backgroundColor)
 
-    private fun drawDogBounds(canvas: Canvas, dog: Dog?) {
-        if (dog == null) return
-        dog.bounds.forEach {
-            drawCell(canvas, dogBoundsPaint, it)
+    private fun drawDogBounds(canvas: Canvas, dogs: List<Dog>) {
+        dogs.forEach { dog ->
+            dog.bounds.forEach {
+                drawCell(canvas, dogBoundsPaint, it)
+            }
         }
     }
 
     private fun drawGoatPath(canvas: Canvas, goat: Goat?) {
-        if (goat != null && goat.path.isNotEmpty())
-            for (i in 0 until goat.lastVisitedIndex)
-                drawCell(canvas, goatPathPaint, goat.path[i])
+        if (goat == null || goat.path.isEmpty()) return
+        val intersectionGoatPathWithGridEdges = goat.intersectionPathWithGridEdges
+
+        for (i in 0 until goat.lastVisitedIndex) {
+            val c = goat.path[i]
+            drawCell(canvas, goatPathPaint, c)
+
+            if (intersectionGoatPathWithGridEdges.contains(c))
+                goatBoundsTouchEdgesListener?.onGoatBoundsTouchEdges()
+
+        }
     }
 
     private fun drawGoatBounds(canvas: Canvas, goat: Goat?) {
         if (goat == null) return
         try {
             val bounds = goat.bounds
-            if (bounds.isNotEmpty()) {
-                val minX = bounds.minOfOrNull { it.x } ?: 0f
-                val minY = bounds.minOfOrNull { it.y } ?: 0f
-                val maxX = bounds.maxOfOrNull { it.x } ?: 0f
-                val maxY = bounds.maxOfOrNull { it.y } ?: 0f
-
-                val rT = bounds.find { it.x == maxX && it.y == minY }
-                val rB = bounds.find { it.x == maxX && it.y == maxY }
-                val lB = bounds.find { it.x == minX && it.y == maxY }
-                val lT = bounds.find { it.x == minX && it.y == minY }
-
-                val cx = (minX + maxX) / 2
-                val cy = (minY + maxY) / 2
-                val r = max(abs((maxY - minY) / 2), abs((maxX - minX) / 2))
-
-                canvas.drawCircle(cx, cy, r, linePaint.apply { color = Color.WHITE })
+            if (bounds.isNotEmpty())
                 for (b in bounds)
-                    drawCell(canvas, cell = b, paint = goatBoundsPaint)
-
-//                canvas.drawRect(minX, maxY, maxX, minY, linePaint.apply { color = Color.GRAY })
-                drawCell(canvas, linePaint.apply { color = Color.RED }, rT)
-                drawCell(canvas, linePaint.apply { color = Color.GREEN }, rB)
-                drawCell(canvas, linePaint.apply { color = Color.BLUE }, lB)
-                drawCell(canvas, linePaint.apply { color = Color.BLACK }, lT)
-                //Draw the first cell
-//                drawCell(canvas, linePaint.apply { color = Color.RED }, bounds.first())
-            }
+                    drawCell(canvas, goatBoundsPaint, b)
         } catch (e: Exception) {
             Log.e("mytag", "RenderService.drawGoatBounds() ${e.printStackTrace()}")
         }
     }
 
+
+    private fun testGrahamScanStuff(canvas: Canvas, bounds: List<Cell>, gridHandler: GridHandler) {
+        val utility = SolutionUtility()
+        utility.setGridHadler(gridHandler)
+        val cellSize = gridHandler.getGrid().cellSize
+
+        val grah = utility.grahamScan(bounds, cellSize)
+        val filtered = utility.filteredGrahamScan(grah)
+
+        drawGrahamScan(canvas, grah, Color.CYAN, Color.YELLOW, Color.BLACK, null)
+        drawGrahamScan(canvas, filtered, Color.RED, Color.YELLOW, Color.BLACK, Color.RED)
+    }
+
+    private fun drawGrahamScan(
+        canvas: Canvas,
+        cells: List<Cell>,
+        lineColor: Int,
+        pointsColor: Int,
+        firstPointColor: Int,
+        textColor: Int?
+    ) {
+        if (cells.isEmpty()) return
+        var prev = cells.first()
+        val p = Paint().apply {
+            color = lineColor
+            strokeWidth = 8f
+        }
+        for (i in 1 until cells.size) {
+            canvas.drawLine(
+                prev.x,
+                prev.y,
+                cells[i].x,
+                cells[i].y,
+                p
+            )
+            if (textColor != null)
+                canvas.drawText(
+                    "$i",
+                    cells[i].x,
+                    cells[i].y,
+                    textPaint.apply { color = textColor }
+                )
+            prev = cells[i]
+        }
+        canvas.drawLine(
+            prev.x,
+            prev.y,
+            cells.first().x,
+            cells.first().y,
+            p
+        )
+        if (textColor != null)
+            canvas.drawText(
+                "0",
+                cells[0].x,
+                cells[0].y,
+                textPaint.apply { color = textColor }
+            )
+
+        cells.forEach {
+            drawCell(canvas, p.apply { color = pointsColor }, it)
+        }
+        drawCell(canvas, p.apply { color = firstPointColor }, cells.first())
+    }
+
     private fun drawObjectAndRopes(
-        canvas: Canvas, objects: List<GameObject>, ropes: List<Rope>, tempWhileMove: GameObject?,
+        canvas: Canvas, objects: List<GameObject>, ropes: List<Rope>, tempWhileMove: GameObject?
     ) {
         try {
             ropes.forEach { it.draw(canvas, paint) }
@@ -178,33 +229,6 @@ class RenderService {
         } catch (e: Exception) {
             Log.e("mytag", "RenderService.drawObjectAndRopes() ${e.printStackTrace()}")
         }
-    }
-
-    private fun drawRopeNodes(canvas: Canvas, ropes: List<Rope>, paint: Paint) =
-        try {
-            for (rope in ropes)
-                for (node in rope.ropeNodes)
-                    node.draw(canvas, paint)
-        } catch (e: Exception) {
-            Log.e("mytag", "RenderService.drawRopeNodes() ${e.printStackTrace()}")
-        }
-
-    private fun drawCellIndex(canvas: Canvas, grid: GameGrid) {
-        for (i in 0 until grid.numCols)
-            for (j in 0 until grid.numRows) {
-                drawCell(
-                    canvas,
-                    rectPaint.apply { style = Paint.Style.STROKE },
-                    grid[i, j]
-                )
-
-                canvas.drawText(
-                    "$i ; $j",
-                    grid[i, j].x - 60,
-                    grid[i, j].y + 10,
-                    textPaint
-                )
-            }
     }
 
     private fun drawCell(canvas: Canvas, paint: Paint, cell: Cell?) {

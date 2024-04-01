@@ -6,15 +6,28 @@
     android:layout_height="match_parent"
     tools:ignore="ExtraText">
 
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleY="2"
+        android:src="@mipmap/sky"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
+
     <LinearLayout
-        android:id="@+id/linear1"
+        android:id="@+id/l3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="700dp"
+        android:layout_marginTop="10dp"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0">
@@ -23,95 +36,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
-            android:text="@string/pick_cell_size"
-            android:textSize="25sp" />
-
-        <Spinner
-            android:id="@+id/pickCellSizeSpinner"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-    </LinearLayout>
-
-    <!--    <LinearLayout-->
-    <!--        android:id="@+id/linear2"-->
-    <!--        android:layout_width="match_parent"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:layout_marginBottom="700dp"-->
-    <!--        android:orientation="horizontal"-->
-    <!--        app:layout_constraintTop_toBottomOf="@+id/linear1">-->
-
-    <!--        <TextView-->
-    <!--            android:layout_width="0dp"-->
-    <!--            android:layout_height="wrap_content"-->
-    <!--            android:layout_weight="2"-->
-    <!--            android:text="@string/pick_render_type"-->
-    <!--            android:textSize="25sp" />-->
-
-    <!--        <Spinner-->
-    <!--            android:id="@+id/pickRenderTypeSpinner"-->
-    <!--            android:layout_width="0dp"-->
-    <!--            android:layout_height="wrap_content"-->
-    <!--            android:layout_weight="1" />-->
-    <!--    </LinearLayout>-->
-
-    <LinearLayout
-        android:id="@+id/linear3"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="700dp"
-        android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@+id/linear1">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:text="@string/enableDrawCellIndex"
-            android:textSize="25sp" />
-
-        <CheckBox
-            android:id="@+id/cellIndexCheckBox"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/linear4"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="700dp"
-        android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@+id/linear3">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:text="@string/enableDrawRopeNodes"
-            android:textSize="25sp" />
-
-        <CheckBox
-            android:id="@+id/drawRopeNodesCheckBox"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/linear5"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="700dp"
-        android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@+id/linear4">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
             android:text="@string/enableRenderDogBounds"
+            android:textColor="@color/black"
             android:textSize="25sp" />
 
         <CheckBox
@@ -122,18 +48,24 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/linear6"
+        android:id="@+id/l4"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="700dp"
+        android:layout_marginTop="10dp"
         android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@+id/linear5">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/l3"
+        app:layout_constraintVertical_bias="0.0">
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
             android:text="@string/enableRenderGoatBounds"
+            android:textColor="@color/black"
             android:textSize="25sp" />
 
         <CheckBox
@@ -142,17 +74,81 @@
             android:layout_height="wrap_content"
             android:layout_weight="1" />
     </LinearLayout>
-
-    <Button
-        android:id="@+id/saveSettingsButton"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/l5"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Сохранить настройки"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/l4"
+        app:layout_constraintVertical_bias="0.0">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:text="@string/enableGrahamScanLines"
+            android:textColor="@color/black"
+            android:textSize="25sp" />
+
+        <CheckBox
+            android:id="@+id/drawGrahamScanLinesCheckBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/l6"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/l5"
+        app:layout_constraintVertical_bias="0.0">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="2"
+            android:text="@string/changeObjectsSize"
+            android:textColor="@color/black"
+            android:textSize="25sp" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/rangeSlider"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:stepSize="5.0"
+            android:valueFrom="20.0"
+            android:valueTo="60.0" />
+
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/saveSettingsButton"
+        android:layout_width="99dp"
+        android:layout_height="82dp"
+        android:background="@color/transparent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter"
+        android:src="@mipmap/ok"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.796"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/linear5"
+        app:layout_constraintTop_toBottomOf="@+id/l3"
         app:layout_constraintVertical_bias="0.816"
         tools:ignore="HardcodedText" />
 

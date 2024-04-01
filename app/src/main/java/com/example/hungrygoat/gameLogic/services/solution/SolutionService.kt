@@ -1,139 +1,237 @@
 package com.example.hungrygoat.gameLogic.services.solution
 
 import android.util.Log
-import com.example.hungrygoat.constants.LevelConditions
-import com.example.hungrygoat.gameLogic.game.Cell
+import com.example.hungrygoat.constants.enums.LevelConditions
+import com.example.hungrygoat.gameLogic.game.grid.GridHandler
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Cell
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Dog
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
-import com.example.hungrygoat.gameLogic.services.grid.GridHandler
+import com.example.hungrygoat.gameLogic.services.PhysicService
+import com.example.hungrygoat.gameLogic.services.solution.SolutionUtility.MovableInfo
 import kotlin.math.abs
-import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 class SolutionService {
-    data class Coords(val x: Float, val y: Float, val r: Float)
-
     private val utils = SolutionUtility()
+    private val physics = PhysicService()
 
     fun checkSolution(
         goat: Goat,
-        dog: Dog?,
+        dogs: List<Dog>,
         gridHandler: GridHandler,
-        targetShape: LevelConditions,
-    ): Boolean {
+    ): List<LevelConditions> {
         try {
-            val goatBounds = goat.bounds
+            if (!utils.isGridHandlerInitialized())
+                utils.setGridHadler(gridHandler)
             val cellSize = gridHandler.getGrid().cellSize
 
+            val corners = utils.getCorners(goat.bounds, cellSize)
+            val angles = utils.getAngles(corners)
+            val sideLengths = utils.getSideLengths(corners)
+            Log.d("mytag", "corners size - ${corners.size}")
+            Log.d("mytag", "angles - $angles , sum = ${angles.sum()}")
+            Log.d("mytag", "lengths - $sideLengths")
+            Log.d("mytag", "avg len - ${sideLengths.average()}")
+
+
             val goatCoords = utils.getCoords(goat, cellSize)
-            val dogCoords = utils.getCoords(dog, cellSize)
+            val dogCoords = dogs.map { utils.getCoords(it, cellSize) }
+
+            if (dogCoords.isNotEmpty()) {
+                Log.d(
+                    "mytag",
+                    "is goat contains dog - ${
+                        physics.isCircleContainsAnotherCircle(
+                            goatCoords,
+                            dogCoords.first()
+                        )
+                    }"
+                )
+                Log.d(
+                    "mytag",
+                    "is goat intersects dog - ${
+                        physics.isTwoCircleIntersects(
+                            goatCoords,
+                            dogCoords.first()
+                        )
+                    }"
+                )
+            }
+
+            val isCircle = checkCircle(goatCoords)
+            val isRing = checkRing(isCircle, goat, dogs, goatCoords, dogCoords)
+            val isMoon = checkMoon(gridHandler, goat, corners)
+            val isOval = checkOval(goat)
+
+            val isLeaf = checkLeaf(gridHandler, goat)
+
+            val isParallelogramm = checkParallelogramm(angles, sideLengths)
+            val isRect = checkRectangle(isParallelogramm, angles)
+            val isTriangle = checkTriangle(goat, corners, angles)
+            val isTriangleWithDogs = checkTriangleWithDogs(isTriangle, goat, dogs)
+            val isRaindrop = checkRaindrop(goat)
+
+            val isHalfCircleWithoutDogs =
+                checkHalfcircle(goat, goat.bounds, corners, cellSize, isMoon)
+
+            val isHalfcircleWithDogs = checkHalfcircleWithDogs(isHalfCircleWithoutDogs, goat, dogs)
+            val isHalfring = checkHalfring(goat, dogs)
+
+            val isHexagon = checkHexagon(goat, corners)
+            val isArrow = checkArrow(corners, angles)
 
 
             Log.d(
                 "MyTag",
                 "Current shape is:\n " +
-                        "Circle - ${isCircle(goatBounds, goatCoords)}\n " +
-                        "Ring - ${
-                            isRing(
-                                isCircle(goatBounds, goatCoords),
-                                goatCoords,
-                                dogCoords
-                            )
-                        }\n " +
+                        "Circle - $isCircle\n " +
+                        "Ring - $isRing\n " +
+                        "isOval - $isOval\n" +
 
-                        "isLeaf -> ${isLeaf(gridHandler, goat)}\n" +
-                        "isMoon -> ${isMoon(gridHandler, goat, dog, goatCoords)}\n" +
+                        "isLeaf - $isLeaf\n" +
+                        "isMoon - $isMoon\n" +
 
-                        "Reactangle - ${isRect(goatBounds)}\n " +
-                        "Triangle - ${isTriangle(goatBounds)}\n" +
-                        "Raindrop - ${isRaindrop(goat)}\n" +
-                        "Hexagon - ${isHexagon(goat)}\n" +
-                        "HalfCircle - ${
-                            isHalfCircle(goat)
-                        }\n " +
-                        "HalfRing - ${isHalfRing(isHalfCircle(goat), goat, dog)}\n" +
-                        ""
+                        "isRect - $isRect\n" +
+                        "isParallelogramm - $isParallelogramm\n " +
+                        "isTrianlge - $isTriangle\n" +
+                        "isTriangleWithDogs - $isTriangleWithDogs\n" +
+                        "isRaindrop - $isRaindrop\n" +
+                        "isHexagon - $isHexagon\n" +
+                        "isHalfcircle - $isHalfCircleWithoutDogs\n " +
+                        "isHalfcircleWithDogs - $isHalfcircleWithDogs\n " +
+                        "isHalfring - $isHalfring\n" +
+                        "isArrow - $isArrow\n"
             )
 
-            return when (targetShape) {
-                LevelConditions.CIRCLE -> isCircle(goatBounds, goatCoords)
-                LevelConditions.RING -> isRing(
-                    isCircle(goatBounds, goatCoords), goatCoords, dogCoords
-                )
-
-                LevelConditions.RECTANGLE -> isRect(goatBounds)
-                LevelConditions.TRIANGLE -> isTriangle(goatBounds)
-
-                LevelConditions.MOON -> isMoon(gridHandler, goat, dog, goatCoords)
-                LevelConditions.LEAF -> isLeaf(gridHandler, goat)
-
-                LevelConditions.HALFCIRCLE -> isHalfCircle(goat)
-
-                LevelConditions.HALFRING -> isHalfRing(isHalfCircle(goat), goat, dog)
-
-                LevelConditions.HEXAGON -> isHexagon(goat)
-                LevelConditions.ARROW -> isArrow(goatBounds)
-                LevelConditions.RAINDROP -> isRaindrop(goat)
-                else -> true
-            }
-
+            return listOf(
+                isCircle to LevelConditions.CIRCLE,
+                isOval to LevelConditions.OVAL,
+                isRing to LevelConditions.RING,
+                isLeaf to LevelConditions.LEAF,
+                isMoon to LevelConditions.MOON,
+                isRect to LevelConditions.RECTANGLE,
+                isParallelogramm to LevelConditions.PARALLELOGRAM,
+                isTriangle to LevelConditions.TRIANGLE_WITHOUT_DOGS,
+                isTriangleWithDogs to LevelConditions.TRIANGLE_WITH_DOGS,
+                isRaindrop to LevelConditions.RAINDROP,
+                isHalfCircleWithoutDogs to LevelConditions.HALFCIRCLE_WITHOUT_DOGS,
+                isHalfcircleWithDogs to LevelConditions.HALFCIRCLE_WITH_DOGS,
+                isHalfring to LevelConditions.HALFRING,
+                isHexagon to LevelConditions.HEXAGON,
+                isArrow to LevelConditions.ARROW
+            ).filter { it.first }.map { it.second }
 
         } catch (e: Exception) {
             Log.e("mytag", "Exception in SolutionService ${e.printStackTrace()}")
-            return false
+            return emptyList()
         }
     }
 
-    private fun isCircle(bounds: List<Cell>, goatCoords: Coords): Boolean {
-        return bounds.all { boundCell ->
-            val dx = abs(boundCell.x - goatCoords.x)
-            val dy = abs(boundCell.y - goatCoords.y)
+    private fun checkCircle(coords: MovableInfo): Boolean {
+        val mapped = coords.bounds.map { boundCell ->
+            val dx = abs(boundCell.x - coords.x)
+            val dy = abs(boundCell.y - coords.y)
 
-            dx < goatCoords.r && dy < goatCoords.r
+            sqrt(dx * dx + dy * dy)
         }
+        val avgDist = mapped.average()
+        val maxDist = mapped.max()
+        val minDist = mapped.min()
+
+        return avgDist <= coords.r && (maxDist - minDist < 15f)
     }
 
-    private fun isRing(
+    private fun checkOval(goat: Goat): Boolean {
+        val attachedRope = goat.attachedRopes.firstOrNull()
+
+        return (goat.attachedRopes.size == 1 && attachedRope?.getRopeConnectedTo()?.isTiedToRope == false)
+    }
+
+    private fun checkRing(
         isCircle: Boolean,
-        goatCoords: Coords,
-        dogCoords: Coords,
+        goat: Goat,
+        dogs: List<Dog>,
+        goatCoords: MovableInfo,
+        dogsCoords: List<MovableInfo>,
     ): Boolean {
-        if (isCircle)
-            return dogCoords.r < goatCoords.r
-        return false
+        if (dogsCoords.isEmpty())
+            return false
+
+        val dogRopesAttachedObjs = dogs.map { dog ->
+            dog.attachedRopes.map { listOf(it.objectFrom, it.objectTo) }.flatten()
+        }.flatten()
+        Log.d("mytag", "$dogRopesAttachedObjs")
+
+        val circlishDog = dogsCoords.filter { checkCircle(it) }
+        return isCircle && circlishDog.all {
+            physics.isCircleContainsAnotherCircle(
+                goatCoords,
+                it
+            )
+        } && goat.attachedRopes.any { it.objectTo in dogRopesAttachedObjs || it.objectFrom in dogRopesAttachedObjs }
     }
 
-    private fun isRect(bounds: List<Cell>): Boolean {
-        val corners = utils.getBoundgBox(bounds).filterNotNull() // rt rb lb lt
-        if (corners.size != 4) return false
+    private fun checkParallelogramm(angles: List<Int>, sideLengths: List<Float>): Boolean {
+        fun isOppositeCornersEqual(maxDiff: Int) =
+            angles[0] - angles[2] in -maxDiff..maxDiff && angles[1] - angles[3] in -maxDiff..maxDiff
 
-        val angles = utils.getAngles(corners)
-        val maxDiff = 1
-        return (angles[0] - angles[1]).absoluteValue <= maxDiff &&
-                (angles[1] - angles[2]).absoluteValue <= maxDiff &&
-                (angles[2] - angles[3]).absoluteValue <= maxDiff &&
-                (angles[3] - angles[0]).absoluteValue <= maxDiff
+        fun isOppositeLensEqual(maxDiff: Int): Boolean {
+            val isOppSidesAEqual =
+                (sideLengths[0] - sideLengths[2]).roundToInt() in -maxDiff..maxDiff
+            val isOppSidesBEqual =
+                (sideLengths[1] - sideLengths[3]).roundToInt() in -maxDiff..maxDiff
+
+            return isOppSidesAEqual && isOppSidesBEqual
+        }
+
+
+        if (angles.size != 4) return false
+
+        val maxAngleDiff = 2
+        val maxLensDiff = 20
+        val isOppositeAnglesEquals = isOppositeCornersEqual(maxAngleDiff * 3)
+        val isOppositeLensEqual = isOppositeLensEqual(maxLensDiff)
+
+        return isOppositeAnglesEquals && isOppositeLensEqual
     }
 
-    private fun isTriangle(bounds: List<Cell>): Boolean {
-        val corners = utils.getBoundgBox(bounds).filterNotNull() // rt rb lb lt
-        if (corners.size != 3) return false
+    private fun checkRectangle(isParal: Boolean, angles: List<Int>): Boolean {
+        if (!isParal) return false
 
-        val angles = utils.getAngles(corners)
+        val delta = 3
+        return angles.all { it in 90 - delta..90 + delta }
+    }
+
+    private fun checkTriangle(goat: Goat, corners: List<Cell>, angles: List<Int>): Boolean {
+        if (corners.size < 3) return false
+
         val lens = utils.getSideLengths(corners)
-
+        val delta = 1
 
         // a,b,c - side of a triangle => len(a) < len(b) + len(c)
         val condA =
             lens[0] < lens[1] + lens[2] && lens[1] < lens[0] + lens[2] && lens[2] < lens[0] + lens[1]
 
-        val delta = 1
         // a1 + a2 + a3 == 180* +- delta
-        val conB = (angles[0] + angles[1] + angles[2]) in (180 - delta..180 + delta)
+        val conB = angles.sum() in (180 - delta..180 + delta)
+        val a = physics.isLineInsideBounds(corners[0], corners[1], goat.bounds, 8f)
+        val b = physics.isLineInsideBounds(corners[1], corners[2], goat.bounds, 8f)
+        val c = physics.isLineInsideBounds(corners[2], corners[0], goat.bounds, 8f)
 
-        return condA && conB
+        Log.d("mytag", "condA = $condA")
+        Log.d("mytag", "conB = $conB")
+
+        return condA && conB && a && b && c
     }
 
-    private fun isLeaf(gridHandler: GridHandler, goat: Goat): Boolean {
+
+    fun checkTriangleWithDogs(isTriangle: Boolean, goat: Goat, dogs: List<Dog>): Boolean =
+        isTriangle && (goat.reachedSet - dogs.map { it.reachedSet }.flatten()
+            .toSet()).size != goat.reachedSet.size
+
+
+    private fun checkLeaf(gridHandler: GridHandler, goat: Goat): Boolean {
         val ropes = goat.attachedRopes
         if (ropes.size != 2)
             return false
@@ -143,31 +241,47 @@ class SolutionService {
         return utils.circleIntersects(gridHandler, ropeA, ropeB)
     }
 
-    private fun isMoon(
+    private fun checkMoon(
         gridHandler: GridHandler,
         goat: Goat,
-        dog: Dog?,
-        goatCoords: Coords,
+        corners: List<Cell>
     ): Boolean {
-        if (!isCircle(goat.path, goatCoords) || dog == null)
-            return false
-        if (goat.attachedRopes.size != 1 && dog.attachedRopes.size != 1)
+        if (corners.isEmpty())
             return false
 
-        val ropeA = goat.attachedRopes[0]
-        val ropeB = dog.attachedRopes[0]
+        val windowed = corners.windowed(2, 1).toMutableList()
+        windowed.add(listOf(corners.last(), corners.first()))
 
-        val ropeAObjToEquals =
-            ropeA.objectTo == ropeB.objectTo || ropeA.objectTo == ropeB.objectFrom
-        val ropeAObjFromEquals =
-            ropeA.objectFrom == ropeB.objectTo || ropeA.objectFrom == ropeB.objectFrom
-        if (ropeAObjToEquals || ropeAObjFromEquals)
-            return false
+        val distslst = windowed.map { lst ->
+            val x = lst.map { it.x }.average().toFloat()
+            val y = lst.map { it.y }.average().toFloat()
 
-        return utils.circleIntersects(gridHandler, ropeA, ropeB)
+            val closestBoundCell =
+                goat.bounds.minBy { PhysicService().distBetween(x, y, it.x, it.y) }
+            PhysicService().distBetween(x, y, closestBoundCell.x, closestBoundCell.y)
+        }
+        Log.d("mytag", "$distslst")
+
+        val farest = windowed.maxBy { lst ->
+            val x = lst.map { it.x }.average().toFloat()
+            val y = lst.map { it.y }.average().toFloat()
+
+            val closestBoundCell =
+                goat.bounds.minBy { PhysicService().distBetween(x, y, it.x, it.y) }
+            PhysicService().distBetween(x, y, closestBoundCell.x, closestBoundCell.y)
+        }
+        val farestX = farest.map { it.x }.average().toFloat()
+        val farestY = farest.map { it.y }.average().toFloat()
+        val closestBoundCell =
+            goat.bounds.minBy { PhysicService().distBetween(farestX, farestY, it.x, it.y) }
+        val dist =
+            PhysicService().distBetween(farestX, farestY, closestBoundCell.x, closestBoundCell.y)
+
+        return dist > gridHandler.getGrid().cellSize * 5
     }
 
-    private fun isRaindrop(goat: Goat): Boolean {
+
+    private fun checkRaindrop(goat: Goat): Boolean {
         val ropes = goat.attachedRopes
         if (ropes.size != 2 || ropes.any { !it.isTiedToRope })
             return false
@@ -186,61 +300,83 @@ class SolutionService {
         return uniquePegs.size == 3
     }
 
-    private fun isHexagon(goat: Goat): Boolean {
-        val ropes = goat.attachedRopes
-        if (ropes.size != 3 || ropes.any { !it.isTiedToRope })
+    private fun checkHexagon(goat: Goat, corners: List<Cell>): Boolean {
+        if (corners.size != 6)
             return false
 
-        val baseRopes = listOf(
-            ropes[0].getRopeConnectedTo()!!,
-            ropes[1].getRopeConnectedTo()!!,
-            ropes[2].getRopeConnectedTo()!!
+        val line1 = physics.isLineInsideBounds(corners[0], corners[1], goat.bounds, 8f)
+        val line2 = physics.isLineInsideBounds(corners[1], corners[2], goat.bounds, 8f)
+        val line3 = physics.isLineInsideBounds(corners[2], corners[3], goat.bounds, 8f)
+        val line4 = physics.isLineInsideBounds(corners[3], corners[4], goat.bounds, 8f)
+        val line5 = physics.isLineInsideBounds(corners[4], corners[5], goat.bounds, 8f)
+        val line6 = physics.isLineInsideBounds(corners[5], corners[0], goat.bounds, 8f)
+
+        return line1 && line2 && line3 && line4 && line5 && line6
+    }
+
+    private fun checkHalfcircle(
+        goat: Goat,
+        goatBounds: List<Cell>,
+        corners: List<Cell>,
+        cellSize: Float,
+        isMoon: Boolean
+    ): Boolean {
+        if (corners.size < 2 || isMoon) return false
+
+        val avgX = goatBounds.map { it.x }.average().toFloat()
+        val avgY = goatBounds.map { it.y }.average().toFloat()
+        val sort = goatBounds.sortedByDescending { physics.distBetween(it.x, it.y, avgX, avgY) }
+
+        val first = sort[0]
+        val second =
+            sort.first { physics.distBetween(first.x, first.y, it.x, it.y) > cellSize * 10 }
+
+        val isLineInsideBounds = physics.isLineInsideBounds(first, second, goatBounds, cellSize)
+        Log.d(
+            "mytag",
+            "half circle: isLineInsideBounds - $isLineInsideBounds , secondCond - ${goat.attachedRopes.any { !it.isTiedToRope }}"
         )
+        return isLineInsideBounds && goat.attachedRopes.any { !it.isTiedToRope } &&
+                !checkCircle(utils.getCoords(goat, cellSize))
+    }
 
-        val isRopeTheSame = baseRopes.distinct().size != baseRopes.size
-        val baseRopeTiedToARope = baseRopes.any { it.isTiedToRope }
+    fun checkHalfcircleWithDogs(isHalfcircle: Boolean, goat: Goat, dogs: List<Dog>) =
+        isHalfcircle && (goat.reachedSet - dogs.map { it.reachedSet }.flatten()
+            .toSet()).size != goat.reachedSet.size
 
-        if (isRopeTheSame || baseRopeTiedToARope)
+    private fun checkHalfring(
+        goat: Goat,
+        dogs: List<Dog?>
+    ): Boolean {
+        Log.d(
+            "mytag",
+            "dogs.all { it?.attachedRopes?.size != 1 } -${dogs.all { it?.attachedRopes?.size != 1 }}"
+        )
+        if (dogs.isEmpty() || dogs.all { it?.attachedRopes?.size != 1 })
             return false
 
-        val uniquePegs = baseRopes.flatMap { listOf(it.objectTo, it.objectFrom) }.distinct()
+        val dogRopes = dogs.mapNotNull { it?.attachedRopes?.getOrNull(0) }
+        val goatSameRopeWithAnyDog = goat.attachedRopes.find { goatRope ->
+            !goatRope.isTiedToRope && dogRopes.any { dogRope ->
+                (goatRope.objectTo == dogRope.objectTo) ||
+                        (goatRope.objectTo == dogRope.objectFrom) ||
+                        (goatRope.objectFrom == dogRope.objectTo) ||
+                        (goatRope.objectFrom == dogRope.objectFrom)
+            }
+        }
 
-        return uniquePegs.size == 6
+        Log.d("mytag", "goatSameRopeWithAnyDog - $goatSameRopeWithAnyDog")
+        if (goatSameRopeWithAnyDog == null) return false
+
+        return goatSameRopeWithAnyDog.ropeLength > dogRopes[0].ropeLength
     }
 
+    private fun checkArrow(corners: List<Cell>, angles: List<Int>): Boolean {
+        if (corners.size != 5) return false
 
-    private fun isHalfCircle(goat: Goat): Boolean {
-        val ropes = goat.attachedRopes
-        if (ropes.size != 2)
-            return false
+        val delta = 5
+        val countRightAngles = angles.count { it in 90 - delta..90 + delta }
 
-        val ropeA = ropes[0]
-        val ropeB = ropes[1]
-
-        return (ropeA.isTiedToRope && !ropeB.isTiedToRope) || (!ropeA.isTiedToRope && ropeB.isTiedToRope)
+        return countRightAngles == 2
     }
-
-    private fun isHalfRing(isHalfCircle: Boolean, goat: Goat, dog: Dog?): Boolean {
-        if (!isHalfCircle || dog == null || dog.attachedRopes.size != 1)
-            return false
-
-        val dogRope = dog.attachedRopes.first()
-
-//        Rope with same anchor points
-        val goatSameRopeWithDog =
-            goat.attachedRopes.find {
-                !it.isTiedToRope && (it.objectTo == dogRope.objectTo) ||
-                        (it.objectTo == dogRope.objectFrom) || (it.objectFrom == dogRope.objectTo) ||
-                        (it.objectFrom == dogRope.objectFrom)
-            } ?: return false
-
-        return goatSameRopeWithDog.ropeLength > dogRope.ropeLength
-    }
-
-
-    private fun isArrow(bounds: List<Cell>): Boolean {
-
-        return false
-    }
-
 }

@@ -2,6 +2,7 @@
     <string name="app_name">Hungry goat</string>
     <string name="settings">Settings/n</string>
     <string name="levelSelect">Выбор уровня</string>
+    <string name="playSandbox">Песочница</string>
     <string name="theory">Теория</string>
     <string name="gameRules">Тут будут правила (:</string>
     <string name="settingsExample">Тут будут настройки (:</string>
@@ -12,12 +13,15 @@
     <string name="sharedPrefsSettingsName">HungryGoatSettings</string>
     <string name="pick_cell_size">Выбор размера клетки</string>
     <string name="enableDrawCellIndex">Включить отрисовку сетки и индексов</string>
-    <string name="enableDrawRopeNodes">Включить отрисовку узлов веревки</string>
-    <string name="enableRenderDogBounds">Включить отрисовку границ волка</string>
+    <string name="enableDrawRopeSegments">Включить отрисовку сегментов веревки</string>
+    <string name="enableRenderDogBounds">Включить отрисовку границ собаки</string>
     <string name="enableRenderGoatBounds">Включить отрисовку границ козы</string>
+    <string name="enableGrahamScanLines">Включить отрисовку тестовых линий</string>
+    <string name="changeObjectsSize">Размер объектов на поле</string>
     <string name="pick_render_type">Выбор тип объекта для отрисовки</string>
 
     <string name="sharedPrefsLatLevelPlayedName">HungryGoatLastLevelPlayed</string>
     <string name="lastLevelPlayed">lastLevelPlayed</string>
     <string name="pause">Пауза\n</string>
+    <string name="education">Обучение</string>
 </resources>

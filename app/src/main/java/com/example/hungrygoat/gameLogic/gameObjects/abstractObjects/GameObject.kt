@@ -3,19 +3,22 @@ package com.example.hungrygoat.gameLogic.gameObjects.abstractObjects
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import com.example.hungrygoat.constants.GameObjectTags
-import com.example.hungrygoat.gameLogic.interfaces.Draw
+import com.example.hungrygoat.constants.enums.GameObjectTags
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.rope.Rope
+import com.example.hungrygoat.gameLogic.interfaces.enigneListeners.DrawListener
 
-abstract class GameObject(vx: Float, vy: Float, tg: GameObjectTags) : Draw {
+abstract class GameObject(vx: Float, vy: Float, tg: GameObjectTags, val r: Float) :
+    DrawListener {
 
     var x = vx
     var y = vy
     val gameObjectTag = tg
-    var circleRadius = 40f
+    var attachedRopes = mutableListOf<Rope>()
     var isTempOnRopeSet = false
 
+    val scaleFactor = 2.15
     fun drawBase(canvas: Canvas, paint: Paint) {
-        canvas.drawCircle(x, y, circleRadius, paint.apply {
+        canvas.drawCircle(x, y, r, paint.apply {
             color = Color.WHITE
         })
     }
@@ -26,9 +29,7 @@ abstract class GameObject(vx: Float, vy: Float, tg: GameObjectTags) : Draw {
 
         other as GameObject
 
-        if (x != other.x) return false
-        if (y != other.y) return false
-        return true
+        return !(x != other.x || y != other.y)
     }
 
     override fun hashCode(): Int {
@@ -36,4 +37,7 @@ abstract class GameObject(vx: Float, vy: Float, tg: GameObjectTags) : Draw {
         result = 31 * result + y.hashCode()
         return result
     }
+
+    override fun toString(): String =
+        "{${gameObjectTag}, ( $x, $y ), isTempOnRopeSet - $isTempOnRopeSet}"
 }

@@ -1,28 +1,26 @@
 package com.example.hungrygoat.gameLogic.services
 
+import com.example.hungrygoat.gameLogic.game.grid.GridHandler
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
-import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
-import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.RopeNode
-import kotlin.math.pow
-import kotlin.math.sqrt
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.EmptyObject
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.rope.Rope
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.rope.RopeSegment
 
 class InputHandler {
 
-    fun getClickedObject(objects: List<GameObject>, x: Float, y: Float) =
-        objects.find { distanceBetween(it.x, it.y, x, y) <= it.circleRadius }
+    fun getClickedObject(gridHandler: GridHandler, objects: List<GameObject>, x: Float, y: Float) =
+        objects.find { gridHandler.distBetween(it, EmptyObject(x, y, 0f)) <= it.r }
 
-    fun getClickedRopeNodeObject(ropes: List<Rope>, x: Float, y: Float): MutableList<RopeNode> {
-        val nodes = mutableListOf<RopeNode>()
-        ropes.forEach { rope ->
-            val filtered = rope.ropeNodes.filter {
-                distanceBetween(it.x, it.y, x, y) <= it.circleRadius
-            }
-            nodes.addAll(filtered)
-        }
-        return nodes
-    }
+    fun getClickedRopeSegment(
+        gridHandler: GridHandler,
+        ropes: List<Rope>,
+        x: Float,
+        y: Float
+    ): RopeSegment? {
+        val clicked = EmptyObject(x, y, 0f)
 
-    private fun distanceBetween(xFrom: Float, yFrom: Float, x: Float, y: Float): Float {
-        return sqrt((xFrom - x).pow(2) + (yFrom - y).pow(2))
+        return ropes.asSequence()
+            .flatMap { rope -> rope.ropeSegments.asSequence() }
+            .find { seg -> gridHandler.distBetween(seg, clicked) <= seg.r }
     }
 }

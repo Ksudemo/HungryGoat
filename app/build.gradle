@@ -16,7 +16,7 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
-
+        setProperty("archivesBaseName", "Hungry Goat")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -36,18 +36,27 @@ android {
 }
 
 dependencies {
+    implementation 'androidx.core:core:1.12.0'
+
+    // Core splash screen
+    runtimeOnly("androidx.core:core-splashscreen:1.1.0-alpha02")
+
+    // Firebase dependencies
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
     implementation 'com.google.firebase:firebase-core:21.1.1'
-    implementation 'com.google.firebase:firebase-crashlytics:18.6.1'
-    implementation 'com.google.firebase:firebase-analytics:21.5.0'
+    implementation 'com.google.firebase:firebase-crashlytics:18.6.2'
+    implementation 'com.google.firebase:firebase-analytics:21.5.1'
     implementation("com.google.firebase:firebase-perf")
 
+    // AndroidX dependencies
     implementation "androidx.fragment:fragment-ktx:1.6.2"
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.core:core-ktx:1.12.0'
-    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.core:core-ktx:1.12.0' // Core KTX - Kotlin extensions for Android
+    implementation 'androidx.core:core-ktx:1.12.0' // Duplicate entry, consider removing one
+
+    // Testing dependencies
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'

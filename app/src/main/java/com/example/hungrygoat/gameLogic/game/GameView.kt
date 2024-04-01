@@ -7,8 +7,7 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
-import com.example.hungrygoat.constants.LevelConditions
-import com.example.hungrygoat.constants.SingletonAppConstantsInfo
+import com.example.hungrygoat.constants.appContants.SingletonAppConstantsInfo
 
 class GameView(context: Context, attrs: AttributeSet? = null) :
     SurfaceView(context, attrs), SurfaceHolder.Callback {
@@ -27,7 +26,7 @@ class GameView(context: Context, attrs: AttributeSet? = null) :
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         if (gameThread == null) {
-            gameThread = GameThread(holder, "", LevelConditions.EMPTY)
+            gameThread = GameThread(holder, "")
             gameThread!!.setRunning(true)
             gameThread!!.start()
         } else
@@ -42,7 +41,7 @@ class GameView(context: Context, attrs: AttributeSet? = null) :
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         SingletonAppConstantsInfo.getAppConst().apply {
-            getEngine().handleTouch(event, getOption()!!, getState()!!)
+            getEngine().handleTouch(event, getOption()!!, getState()!!, getSetttings().objectsSize)
         }
         return true
     }
@@ -59,7 +58,8 @@ class GameView(context: Context, attrs: AttributeSet? = null) :
         }
     }
 
-    // Добавьте метод для установки GameThread из MainActivity
+    fun getBitmap() = gameThread?.getCanvasBitmap(width, height)
+
     fun setGameThread(thread: GameThread) {
         gameThread = thread
     }

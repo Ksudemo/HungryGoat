@@ -1,9 +1,18 @@
 <resources>
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Diplom" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-    </style>
+
+    <style name="Base.Theme.Diplom" parent="Theme.Material3.DayNight.NoActionBar" />
 
     <style name="Theme.Diplom" parent="Base.Theme.Diplom" />
+
+    <style name="splash_screen" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_layout</item>
+    </style>
+
+    <style name="ProgressDialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/transparent</item>
+        <item name="android:background">@color/transparent</item>
+        <item name="android:windowMinWidthMinor">0dp</item>
+    </style>
+
 </resources>

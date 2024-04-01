@@ -1,23 +1,23 @@
 package com.example.hungrygoat.gameLogic.gameObjects
 
 import android.util.Log
-import com.example.hungrygoat.constants.GameObjectTags
-import com.example.hungrygoat.constants.PickedOptions
+import androidx.core.content.res.ResourcesCompat
+import com.example.hungrygoat.R
+import com.example.hungrygoat.constants.appContants.SingletonAppConstantsInfo
+import com.example.hungrygoat.constants.enums.GameObjectTags
+import com.example.hungrygoat.constants.enums.PickedOptions
 import com.example.hungrygoat.gameLogic.game.GameEngine
+import com.example.hungrygoat.gameLogic.game.grid.GridHandler
 import com.example.hungrygoat.gameLogic.gameObjects.abstractObjects.GameObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Dog
-import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.EmptyObject
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
 import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Peg
-import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.Rope
-import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.RopeNode
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.rope.Rope
+import com.example.hungrygoat.gameLogic.gameObjects.inheritedObject.rope.RopeSegment
 import com.example.hungrygoat.gameLogic.services.InputHandler
-import com.example.hungrygoat.gameLogic.services.PhysicService
-import com.example.hungrygoat.gameLogic.services.grid.GridHandler
 import kotlin.time.measureTime
 
 class GameObjectFactory {
-    private val physicService = PhysicService()
     private val inputHandler = InputHandler()
 
     fun createNewObject(
@@ -26,75 +26,89 @@ class GameObjectFactory {
         tempObj: GameObject?,
         option: PickedOptions,
         gridHandler: GridHandler,
+        r: Float
     ): GameObject? {
         try {
-            val clickedCell =
-                gridHandler.getObjectCell(EmptyObject(clickedX, clickedY, GameObjectTags.EMPTY))
-                    ?: return null
-
-            val centerX = clickedCell.x
-            val centerY = clickedCell.y
-
+            val appC = SingletonAppConstantsInfo.getAppConst()
+            val res = appC.resources
             return when (option) {
                 PickedOptions.ROPE -> {
+                    val clickedObject = inputHandler.getClickedObject(
+                        gridHandler,
+                        GameEngine.getObjects(),
+                        clickedX,
+                        clickedY
+                    )
 
-                    val nodes =
-                        inputHandler.getClickedRopeNodeObject(
-                            GameEngine.getRopes(), clickedX, clickedY
-                        )
+                    val clickedSegment = inputHandler.getClickedRopeSegment(
+                        gridHandler,
+                        GameEngine.getRopes(),
+                        clickedX,
+                        clickedY
+                    )
 
-                    if (tempObj?.gameObjectTag == GameObjectTags.RopeNode)
-                        nodes.add(tempObj as RopeNode)
-
-                    val clickedGameObject =
-                        inputHandler.getClickedObject(GameEngine.getObjects(), clickedX, clickedY)
-                            ?: nodes.firstOrNull()
-                    if (clickedGameObject == null || clickedGameObject == tempObj)
+                    val curClicked = clickedObject ?: clickedSegment
+                    // if click on the same object twice or missclick on empty spot
+                    if (curClicked == null || curClicked == tempObj)
                         return null
 
+                    /*
+                    if tempObj is null (click on the first object then rope set) => mark clicked as isTempOnRopeSet,
+                    else set rope from tempObj to curClicked
+                     */
                     when (tempObj) {
-                        null -> clickedGameObject.apply {
-                            isTempOnRopeSet = true
-                        }
-
-                        else -> setRope(gridHandler, tempObj, clickedGameObject, nodes)
+                        null -> curClicked.apply { isTempOnRopeSet = true }
+                        else -> setRope(gridHandler, tempObj, curClicked, r)
                     }
                 }
 
-                PickedOptions.PEG -> Peg(
-                    centerX,
-                    centerY,
-                    GameObjectTags.PEG
-                )
-
-                PickedOptions.GOAT -> Goat(
-                    centerX,
-                    centerY,
-                    GameObjectTags.GOAT,
-                ).apply {
-                    movableAction({
-                        val time1 = measureTime {
-                            calcReachedSet(gridHandler)
-                        }
-                        Log.d("mytag", "movable.calcReachedSet time - $time1")
-                    }, {
-                        val time2 = measureTime {
-                            setBoundary(gridHandler)
-                        }
-                        Log.d("mytag", "movable.setBoundary time - $time2")
-                    })
-                    invokeAction()
+                PickedOptions.PEG -> {
+                    val dr = ResourcesCompat.getDrawable(res, R.mipmap.peg_object, null)
+                    Peg(
+                        clickedX,
+                        clickedY,
+                        dr,
+                        r
+                    )
                 }
 
-                PickedOptions.DOG -> Dog(
-                    centerX,
-                    centerY,
-                    GameObjectTags.DOG
-                ).apply {
-                    movableAction({
-                        calcReachedSet(gridHandler)
-                    }, { setBoundary(gridHandler) })
-                    invokeAction()
+                PickedOptions.GOAT -> {
+                    val dr = ResourcesCompat.getDrawable(res, R.mipmap.goat, null)
+                    Goat(
+                        clickedX,
+                        clickedY,
+                        dr, r
+                    ).apply {
+                        movableAction({
+                            val time1 = measureTime {
+                                calcReachedSet(gridHandler)
+                            }
+                            val time2 = measureTime {
+                                bounds = getBoundary(gridHandler)
+                            }
+                            Log.d("mytag", "movable.calcReachedSet time - $time1")
+                            Log.d("mytag", "movable.setBoundary time - $time2")
+                        })
+                        invokeAction()
+                    }
+                }
+
+                PickedOptions.DOG -> {
+                    val dr = ResourcesCompat.getDrawable(res, R.mipmap.dog, null)
+                    Dog(
+                        clickedX,
+                        clickedY,
+                        dr,
+                        r
+                    ).apply {
+                        movableAction(
+                            {
+                                calcReachedSet(gridHandler)
+                                bounds = getBoundary(gridHandler)
+                            }
+                        )
+                        invokeAction()
+                    }
                 }
 
                 PickedOptions.ERASER -> null
@@ -113,33 +127,22 @@ class GameObjectFactory {
 
     private fun setRope(
         gridHandler: GridHandler,
-        tempObj: GameObject?,
+        tempObj: GameObject,
         clickedObj: GameObject,
-        nodes: List<RopeNode>,
-    ): GameObject? {
+        r: Float
+    ): Rope {
+        val len = gridHandler.distBetween(tempObj, clickedObj)
 
-        tempObj?.isTempOnRopeSet = false
-        clickedObj.isTempOnRopeSet = false
+        val segments =
+            listOf(tempObj, clickedObj).filter { it.gameObjectTag == GameObjectTags.RopeSegment }
+        val isTiedToRope = segments.isNotEmpty()
+        val rope = Rope(tempObj, clickedObj, isTiedToRope, len, GameObjectTags.ROPE, r)
+        rope.setRopeSegments()
 
-        return if (tempObj == null || !physicService.canTied(
-                tempObj,
-                clickedObj
-            ) || tempObj == clickedObj
-        )
-            null
-        else {
-            val length = gridHandler.distBetween(
-                tempObj, clickedObj
-            )
-            val isTiedToRope =
-                tempObj.gameObjectTag == GameObjectTags.RopeNode || clickedObj.gameObjectTag == GameObjectTags.RopeNode
-            val rope = Rope(tempObj, clickedObj, isTiedToRope, length, GameObjectTags.ROPE)
-            rope.setRopeNodes()
-
-            if (isTiedToRope)
-                nodes.first().baseRope.attachedRopes.add(rope)
-
-            rope
+        segments.forEach { seg ->
+            (seg as RopeSegment).baseRope.attachedRopesHashSet.add(rope)
         }
+
+        return rope
     }
 }

@@ -62,6 +62,19 @@
                                 <PersistentState>
                                   <option name="children">
                                     <map>
+                                      <entry key="backgroundImage">
+                                        <value>
+                                          <PersistentState>
+                                            <option name="values">
+                                              <map>
+                                                <entry key="imagePath" value="C:\Users\aDragon\Downloads\no back.png" />
+                                                <entry key="scalingPercent" value="272" />
+                                                <entry key="trimmed" value="true" />
+                                              </map>
+                                            </option>
+                                          </PersistentState>
+                                        </value>
+                                      </entry>
                                       <entry key="foregroundClipArt">
                                         <value>
                                           <PersistentState>
@@ -80,8 +93,8 @@
                                             <option name="values">
                                               <map>
                                                 <entry key="color" value="000000" />
-                                                <entry key="imagePath" value="C:\Users\aDragon\Downloads\Play.jpeg" />
-                                                <entry key="scalingPercent" value="99" />
+                                                <entry key="imagePath" value="C:\Users\aDragon\Downloads\Telegram Desktop\иконки\play.webp" />
+                                                <entry key="scalingPercent" value="63" />
                                               </map>
                                             </option>
                                           </PersistentState>
@@ -113,7 +126,8 @@
                                   </option>
                                   <option name="values">
                                     <map>
-                                      <entry key="outputName" value="ic_play_game" />
+                                      <entry key="backgroundColor" value="ffffff" />
+                                      <entry key="outputName" value="play" />
                                       <entry key="previewDensity" value="MEDIUM" />
                                     </map>
                                   </option>
@@ -159,6 +173,11 @@
                                           </PersistentState>
                                         </value>
                                       </entry>
+                                    </map>
+                                  </option>
+                                  <option name="values">
+                                    <map>
+                                      <entry key="iconShape" value="NONE" />
                                     </map>
                                   </option>
                                 </PersistentState>
