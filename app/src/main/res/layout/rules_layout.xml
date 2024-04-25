@@ -9,6 +9,7 @@
         android:id="@+id/mainRulesLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -17,6 +18,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.295">
 
+
         <TextView
             android:id="@+id/gameRulesTextView1"
             android:layout_width="match_parent"
@@ -24,12 +26,12 @@
             android:layout_gravity="center"
             android:layout_marginStart="30dp"
             android:layout_marginEnd="30dp"
+            android:fontFamily="@font/poiret_one"
             android:gravity="center"
             android:text="test text1"
             android:textColor="@color/black"
-            android:textSize="18sp"
-            android:typeface="serif" />
-
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
         <ImageView
             android:id="@+id/circleCondImageView"
@@ -45,11 +47,12 @@
             android:layout_gravity="center"
             android:layout_marginStart="30dp"
             android:layout_marginEnd="30dp"
+            android:fontFamily="@font/poiret_one"
             android:gravity="center"
             android:text="test text2"
             android:textColor="@color/black"
-            android:textSize="18sp"
-            android:typeface="serif" />
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
         <ImageView
             android:id="@+id/ovalCondImageView"
@@ -65,10 +68,11 @@
             android:layout_gravity="center"
             android:layout_marginStart="30dp"
             android:layout_marginEnd="30dp"
+            android:fontFamily="@font/poiret_one"
             android:gravity="center"
             android:text="test text3"
             android:textColor="@color/black"
-            android:textSize="18sp"
-            android:typeface="serif" />
+            android:textSize="20sp"
+            android:textStyle="bold" />
     </LinearLayout>
 </ScrollView>

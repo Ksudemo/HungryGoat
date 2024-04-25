@@ -46,12 +46,12 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
-            android:id="@+id/exitButton"
+            android:id="@+id/exitImgButton"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_weight="1"
-            android:background="@android:color/transparent"
+            android:background="@drawable/button_press_selector"
             android:importantForAccessibility="no"
             android:scaleType="centerCrop"
             android:src="@mipmap/exit_2"
@@ -69,18 +69,18 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_weight="1"
-            android:background="@android:color/transparent"
+            android:background="@drawable/button_press_selector"
             android:importantForAccessibility="no"
             android:scaleType="centerCrop"
             android:src="@mipmap/question" />
 
         <ImageButton
-            android:id="@+id/hintImageButton"
+            android:id="@+id/hintImgButton"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_weight="1"
-            android:background="@android:color/transparent"
+            android:background="@drawable/button_press_selector"
             android:importantForAccessibility="no"
             android:scaleType="centerCrop"
             android:src="@mipmap/lightbulb" />
@@ -93,15 +93,16 @@
             android:layout_weight="2"
             android:background="@color/black"
             android:gravity="center"
+            android:textColor="@color/white"
             android:textSize="28sp" />
 
         <ImageButton
-            android:id="@+id/reverLastMoveImgButton"
+            android:id="@+id/revertLastMoveImgButton"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_weight="1"
-            android:background="@android:color/transparent"
+            android:background="@drawable/button_press_selector"
             android:importantForAccessibility="no"
             android:scaleType="centerCrop"
             android:src="@mipmap/back" />
@@ -112,7 +113,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_weight="1"
-            android:background="@android:color/transparent"
+            android:background="@drawable/button_press_selector"
             android:importantForAccessibility="no"
             android:scaleType="centerCrop"
             android:src="@mipmap/restart" />
@@ -123,7 +124,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_weight="1"
-            android:background="@android:color/transparent"
+            android:background="@drawable/button_press_selector"
             android:importantForAccessibility="no"
             android:scaleType="centerCrop"
             android:src="@mipmap/play_2" />
@@ -139,7 +140,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbarConstraintLayout">
 
-        <com.example.hungrygoat.gameLogic.game.GameView
+        <com.ksudemo.hungrygoat.gameLogic.game.GameView
             android:id="@+id/gameView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -163,7 +164,7 @@
             app:layout_constraintStart_toStartOf="parent">
 
             <ImageButton
-                android:id="@+id/pegButton"
+                android:id="@+id/pegImgButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="10dp"
@@ -176,7 +177,7 @@
                 android:src="@mipmap/peg_button" />
 
             <ImageButton
-                android:id="@+id/ropeButton"
+                android:id="@+id/ropeImgButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
@@ -186,7 +187,7 @@
                 android:src="@mipmap/rope_button" />
 
             <ImageButton
-                android:id="@+id/goatButton"
+                android:id="@+id/goatImgButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginTop="5dp"
@@ -197,7 +198,7 @@
                 android:src="@mipmap/goat" />
 
             <ImageButton
-                android:id="@+id/dogButton"
+                android:id="@+id/dogImgButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
@@ -210,7 +211,7 @@
                 android:visibility="visible" />
 
             <ImageButton
-                android:id="@+id/eraserButton"
+                android:id="@+id/eraserImgButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginEnd="10dp"

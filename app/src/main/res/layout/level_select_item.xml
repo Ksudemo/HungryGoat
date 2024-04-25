@@ -4,18 +4,17 @@
     android:id="@+id/itemSelectElement"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_gravity="top"
     android:layout_marginStart="8dp"
-    android:layout_marginTop="8dp"
+    android:layout_marginTop="4dp"
     android:layout_marginEnd="8dp"
-    android:layout_marginBottom="8dp"
     android:clickable="true"
     android:focusable="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/levelConstraintLayout"
         android:layout_width="wrap_content"
-        android:layout_height="80dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_press_selector"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
@@ -25,7 +24,7 @@
         <View
             android:id="@+id/levelNumView"
             android:layout_width="wrap_content"
-            android:layout_height="70dp"
+            android:layout_height="65dp"
             android:background="@mipmap/one"
             android:gravity="top"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -38,7 +37,7 @@
         <ImageView
             android:id="@+id/lockLevelNumView"
             android:layout_width="wrap_content"
-            android:layout_height="70dp"
+            android:layout_height="65dp"
             android:background="@mipmap/lock"
             android:gravity="top"
             android:importantForAccessibility="no"
@@ -54,17 +53,31 @@
             app:layout_constraintVertical_bias="0.1" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <TextView
+        android:id="@+id/bestTimeTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="70dp"
+        android:layout_marginBottom="3dp"
+        android:fontFamily="@font/arsenal"
+        android:gravity="center"
+        android:textColor="@color/black"
+        android:textStyle="bold"
+        android:typeface="serif"
+        app:layout_constraintBottom_toTopOf="@id/starsLL"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <LinearLayout
         android:id="@+id/starsLL"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="-25dp"
-        android:layout_marginBottom="10dp"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/levelConstraintLayout">
+        app:layout_constraintTop_toBottomOf="@+id/bestTimeTextView">
 
         <ImageView
             android:id="@+id/star1"
