@@ -17,6 +17,7 @@ import com.ksudemo.hungrygoat.gameLogic.gameObjects.inheritedObject.Goat
 import com.ksudemo.hungrygoat.gameLogic.gameObjects.inheritedObject.rope.Rope
 import com.ksudemo.hungrygoat.gameLogic.interfaces.goatListeners.GoatBoundsTouchEdgesListener
 import com.ksudemo.hungrygoat.gameLogic.services.solution.SolutionUtility
+import kotlin.math.roundToInt
 
 class RenderService {
 
@@ -95,8 +96,8 @@ class RenderService {
             if (settings.drawGrahamScanLines)
                 goat?.bounds?.let { testGrahamScanStuff(canvas, it, gridHandler) }
 
-            drawRuler(canvas, ruller)
             drawObjectAndRopes(canvas, objects, ropes, tempWhileMove)
+            drawRuler(canvas, ruller)
         } catch (e: Exception) {
             Log.e("mytag", "RenderService.render() ${e.printStackTrace()}")
         }
@@ -107,9 +108,9 @@ class RenderService {
         ruller.forEach {
             val a = it.from
             val b = it.to
-            val angle = "%.2f".format(it.angle)
+            val angle = it.angle.roundToInt()
             canvas.drawLine(a.x, a.y, b.x, b.y, rulerPaint)
-            canvas.drawText("$angle°", (a.x + b.x) / 2, b.y + 10, rulerTextPaint)
+            canvas.drawText("$angle°", b.x - 5, b.y - 5, rulerTextPaint)
         }
     }
 

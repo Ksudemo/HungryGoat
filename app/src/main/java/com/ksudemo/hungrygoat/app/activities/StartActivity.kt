@@ -17,6 +17,7 @@ class StartActivity : AppCompatActivity(), OnClickListener {
 
     private lateinit var exitButton: ImageButton
     private lateinit var settingsButton: ImageButton
+    private lateinit var manualButton: ImageButton
     private lateinit var rulesButton: ImageButton
 
     private lateinit var levelSelectButton: ImageButton
@@ -40,6 +41,7 @@ class StartActivity : AppCompatActivity(), OnClickListener {
 
         exitButton = findViewById(R.id.closeAppButton)
         settingsButton = findViewById(R.id.settingsButton)
+        manualButton = findViewById(R.id.manualButton)
         playSandboxButton = findViewById(R.id.playSandboxButtom)
         levelSelectButton = findViewById(R.id.levelSelectButton)
         rulesButton = findViewById(R.id.rulesButton)
@@ -79,6 +81,8 @@ class StartActivity : AppCompatActivity(), OnClickListener {
             }
 
             R.id.settingsButton -> Intent(applicationContext, SettingsActivity::class.java)
+
+            R.id.manualButton -> Intent(applicationContext, ManualActivity::class.java)
 
             R.id.levelSelectButton -> Intent(applicationContext, LevelSelectionActivity::class.java)
 

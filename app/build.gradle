@@ -14,8 +14,8 @@ android {
         applicationId "com.ksudemo.hungrygoat"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 5
+        versionName "Let me iiiin"
         setProperty("archivesBaseName", "Hungry Goat")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

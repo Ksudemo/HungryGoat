@@ -4,15 +4,15 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.example.hungrygoat",
+  "applicationId": "com.ksudemo.hungrygoat",
   "variantName": "release",
   "elements": [
     {
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 1,
-      "versionName": "1.0",
+      "versionCode": 3,
+      "versionName": "Closed test upd 2",
       "outputFile": "Hungry Goat-release.apk"
     }
   ],

@@ -82,7 +82,11 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, GoatBoundsTouch
         Log.d("mytag", "onCreate")
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                startActivity(Intent(applicationContext, StartActivity::class.java))
+                val activityToExit = if (levelCondition == LevelConditions.SANDBOX)
+                    StartActivity::class.java
+                else LevelSelectionActivity::class.java
+
+                startActivity(Intent(applicationContext, activityToExit))
             }
         })
 
@@ -174,7 +178,7 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, GoatBoundsTouch
         if (educationLevelConditions.contains(newCond)) {
             val intent = Intent(
                 applicationContext,
-                com.ksudemo.hungrygoat.app.activities.EducationActivity::class.java
+                EducationActivity::class.java
             )
             intent.putExtra("eduCondition", newCond.toString())
             startActivity(intent)
@@ -219,8 +223,7 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, GoatBoundsTouch
             lastTime in 61..90 -> 4
             lastTime in 91..120 -> 3
             lastTime in 121..150 -> 2
-            lastTime in 151..180 -> 1
-            else -> 0
+            else -> 1
         }
 
         appConstants.win(levelCondition, rating, lastTime)
@@ -502,12 +505,12 @@ class LevelActivity : AppCompatActivity(), View.OnClickListener, GoatBoundsTouch
             when (view?.id) {
                 R.id.exitImgButton -> {
                     appConstants.getEngine().clearObjects()
-                    startActivity(
-                        Intent(
-                            applicationContext,
-                            LevelSelectionActivity::class.java
-                        )
-                    )
+
+                    val activityToExit = if (levelCondition == LevelConditions.SANDBOX)
+                        StartActivity::class.java
+                    else LevelSelectionActivity::class.java
+
+                    startActivity(Intent(applicationContext, activityToExit))
                 }
 
                 R.id.hintImgButton -> hintImgButtonClick()

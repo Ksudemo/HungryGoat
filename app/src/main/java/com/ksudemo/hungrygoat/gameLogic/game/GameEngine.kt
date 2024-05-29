@@ -230,7 +230,8 @@ class GameEngine {
 
                         else -> createdObject?.isTempOnRopeSet = false
                     }
-                    Log.d("mytag", "objs size - ${objects.size}")
+                    Log.d("mytag", "ropes - $ropes")
+                    Log.d("mytag", "objects size - ${objects.size}")
                 }
             }
 
@@ -297,7 +298,13 @@ class GameEngine {
         val ropeAndAnyAttachedConnectedToSameRope =
             anchor.attachedRopes.any { attached -> rope.getRopeConnectedTo() == attached.getRopeConnectedTo() && rope.getRopeConnectedTo() != null }
 
-        return !ropeConnectedToAttached && !ropeAndAnyAttachedConnectedToSameRope
+        Log.d("mytag", "ropes contains new ropes- ${ropes.any { it == rope }}")
+        Log.d(
+            "mytag",
+            "${(!ropeConnectedToAttached && !ropeAndAnyAttachedConnectedToSameRope) || !ropes.any { it == rope }}"
+        )
+
+        return (!ropeConnectedToAttached && !ropeAndAnyAttachedConnectedToSameRope) && !ropes.any { it == rope }
     }
 
     @Synchronized
